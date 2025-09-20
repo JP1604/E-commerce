@@ -11,8 +11,8 @@ class SimpleSettings:
     def __init__(self):
         # Database settings (using PostgreSQL)
         self.database_url: str = os.getenv(
-            "DATABASE_URL", 
-            "postgresql+asyncpg://ecommerce_user:ecommerce_pass@localhost:5432/ecommerce_db"
+            "DATABASE_URL",
+            "postgresql+asyncpg://ecommerce_user:ecommerce_pass@localhost:5432/ecommerce"
         )
         self.database_echo: bool = os.getenv("DATABASE_ECHO", "false").lower() == "true"
         
