@@ -1,9 +1,9 @@
 version: "3.9"
 
 services:
-  db:
+  product_db:
     image: postgres:16-alpine
-    container_name: ecommerce_db
+    container_name: product_service_db
     restart: always
     environment:
       POSTGRES_USER: ecommerce_user
@@ -14,21 +14,51 @@ services:
     volumes:
       - ecommerce_data:/var/lib/postgresql/data
 
-  backend:
+  product_service:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: ecommerce_backend
+      context: ./Backend
+      dockerfile: src/product_service/Dockerfile
+    container_name: product_service
     restart: always
     depends_on:
-      - db
+      - product_db
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://ecommerce_user:ecommerce_pass@db:5432/ecommerce
+      - DATABASE_URL=postgresql+asyncpg://ecommerce_user:ecommerce_pass@product_db:5432/ecommerce
       - DATABASE_ECHO=false
+    volumes:
+      - ./Backend:/app
+
+  user_db:
+    image: postgres:16-alpine
+    container_name: user_service_db
+    restart: always
+    environment:
+      POSTGRES_USER: user_svc
+      POSTGRES_PASSWORD: user_pass
+      POSTGRES_DB: userdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - user_service_data:/var/lib/postgresql/data
+
+  user_service:
+    build:
+      context: ./Backend
+      dockerfile: src/user_service/Dockerfile
+    container_name: user_service
+    restart: always
+    depends_on:
+      - user_db
+    ports:
+      - "8001:8001"
+    environment:
+      - USER_DATABASE_URL=postgresql+asyncpg://user_svc:user_pass@user_db:5432/userdb
+      - USER_DATABASE_ECHO=false
     volumes:
       - ./backend:/app
 
 volumes:
   ecommerce_data:
+  user_service_data:
