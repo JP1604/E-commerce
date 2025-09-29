@@ -6,10 +6,9 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.infrastructure.database import get_db_session
-from src.container import get_container, SimpleContainer
-from src.domain.entities import Product
-from src.application.dtos import ProductCreateDTO, ProductResponseDTO, ProductUpdateDTO
+from src.product_service.container import get_container, SimpleContainer
+from src.product_service.domain.entities import Product
+from src.product_service.application.dtos import ProductCreateDTO, ProductResponseDTO, ProductUpdateDTO
 
 
 class ProductController:
