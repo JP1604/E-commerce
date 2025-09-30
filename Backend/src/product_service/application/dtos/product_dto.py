@@ -11,6 +11,7 @@ class ProductCreateDTO(BaseModel):
     name: str
     description: str
     price: float
+    category: str
     stock_quantity: int = 0
 
 
@@ -19,6 +20,7 @@ class ProductUpdateDTO(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     price: Optional[float] = None
+    category: Optional[str] = None
     stock_quantity: Optional[int] = None
 
 
@@ -28,6 +30,7 @@ class ProductResponseDTO(BaseModel):
     name: str
     description: str
     price: float
+    category: str
     stock_quantity: int
     created_at: datetime
     updated_at: datetime
@@ -40,6 +43,7 @@ class ProductResponseDTO(BaseModel):
             name=product.name,
             description=product.description,
             price=product.price,
+            category=product.category,
             stock_quantity=product.stock_quantity,
             created_at=product.created_at,
             updated_at=product.updated_at

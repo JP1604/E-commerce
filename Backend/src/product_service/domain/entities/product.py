@@ -15,6 +15,7 @@ class Product(BaseEntity):
         name: str,
         description: str,
         price: float,
+        category: str,
         stock_quantity: int = 0,
         id: Optional[UUID] = None,
     ) -> None:
@@ -22,6 +23,7 @@ class Product(BaseEntity):
         self.name = name
         self.description = description
         self.price = price
+        self.category = category
         self.stock_quantity = stock_quantity
         
         self._validate()
@@ -37,6 +39,8 @@ class Product(BaseEntity):
         """Basic validation."""
         if not self.name or not self.name.strip():
             raise ValueError("Product name is required")
+        if not self.category or not self.category.strip():
+            raise ValueError("Product category is required")
         if self.price <= 0:
             raise ValueError("Product price must be positive")
         if self.stock_quantity < 0:
@@ -49,6 +53,7 @@ class Product(BaseEntity):
             "name": self.name,
             "description": self.description,
             "price": self.price,
+            "category": self.category,
             "stock_quantity": self.stock_quantity,
         })
         return base_dict
