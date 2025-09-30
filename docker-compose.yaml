@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   product_db:
-    image: postgres:16-alpine
+    image: postgres:15
     container_name: product_service_db
     restart: always
     environment:
@@ -31,7 +31,7 @@ services:
       - ./Backend:/app
 
   user_db:
-    image: postgres:16-alpine
+    image: postgres:15
     container_name: user_service_db
     restart: always
     environment:
@@ -88,7 +88,122 @@ services:
     volumes:
       - ./Backend:/app
 
+
+  cart_db:
+    image: postgres:15
+    container_name: cart_service_db
+    restart: always
+    environment:
+      POSTGRES_USER: cart_svc
+      POSTGRES_PASSWORD: cart_pass
+      POSTGRES_DB: cartdb
+    ports:
+      - "5436:5432"
+    volumes:
+      - cart_service_data:/var/lib/postgresql/data
+
+  cart_service:
+    build:
+      context: ./Backend
+      dockerfile: src/cart_service/Dockerfile
+    container_name: cart_service
+    restart: always
+    depends_on:
+      - cart_db
+    ports:
+      - "8010:8010"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://cart_svc:cart_pass@cart_db:5432/cartdb
+      - DATABASE_ECHO=false
+    volumes:
+      - ./Backend:/app
+
+  order_db:
+    image: postgres:15
+    container_name: order_service_db
+    restart: always
+    environment:
+      POSTGRES_USER: order_svc
+      POSTGRES_PASSWORD: order_pass
+      POSTGRES_DB: orderdb
+    ports:
+      - "5434:5432"
+    volumes:
+      - order_service_data:/var/lib/postgresql/data
+
+  order_service:
+    build:
+      context: ./Backend
+      dockerfile: src/order_service/Dockerfile
+    container_name: order_service
+    restart: always
+    depends_on:
+      - order_db
+    ports:
+      - "8005:8005"
+    environment:
+      - ORDER_DATABASE_URL=postgresql+asyncpg://order_svc:order_pass@order_db:5432/orderdb
+      - ORDER_DATABASE_ECHO=false
+    volumes:
+      - ./Backend:/app
+
+  order_validation_service:
+    build:
+      context: ./Backend
+      dockerfile: src/order_validation_service/Dockerfile
+    container_name: order_validation_service
+    restart: always
+    ports:
+      - "8006:8006"
+    environment:
+      - USER_SERVICE_URL=http://user_service:8001
+      - PRODUCT_SERVICE_URL=http://product_service:8000
+      - ORDER_SERVICE_URL=http://order_service:8005
+    volumes:
+      - ./Backend:/app
+
+  payment_db:
+    image: postgres:15
+    container_name: payment_service_db
+    restart: always
+    environment:
+      POSTGRES_USER: payment_svc
+      POSTGRES_PASSWORD: payment_pass
+      POSTGRES_DB: paymentdb
+    ports:
+      - "5435:5432"
+    volumes:
+      - payment_service_data:/var/lib/postgresql/data
+
+  payment_service:
+    build:
+      context: ./Backend
+      dockerfile: src/payment_service/Dockerfile
+    container_name: payment_service
+    restart: always
+    depends_on:
+      - payment_db
+    ports:
+      - "8007:8007"
+    environment:
+      - PAYMENT_DATABASE_URL=postgresql+asyncpg://payment_svc:payment_pass@payment_db:5432/paymentdb
+      - PAYMENT_DATABASE_ECHO=false
+      - ORDER_SERVICE_URL=http://order_service:8005
+      - USER_SERVICE_URL=http://user_service:8001
+
+    volumes:
+      - ./Backend:/app
+
 volumes:
   ecommerce_data:
   user_service_data:
+
   delivery_service_data:
+
+
+  cart_service_data:
+
+  order_service_data:
+  payment_service_data:
+
+

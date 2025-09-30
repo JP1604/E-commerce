@@ -23,6 +23,7 @@ class SQLAlchemyProductRepository(ProductRepository):
             name=product.name,
             description=product.description,
             price=product.price,
+            category=product.category,
             stock_quantity=product.stock_quantity,
         )
         
@@ -60,6 +61,7 @@ class SQLAlchemyProductRepository(ProductRepository):
         model.name = product.name
         model.description = product.description
         model.price = product.price
+        model.category = product.category
         model.stock_quantity = product.stock_quantity
         
         await self._session.flush()
@@ -86,6 +88,7 @@ class SQLAlchemyProductRepository(ProductRepository):
             name=model.name,
             description=model.description,
             price=model.price,
+            category=model.category,
             stock_quantity=model.stock_quantity,
             id=model.id,
         )

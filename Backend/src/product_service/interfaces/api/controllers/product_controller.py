@@ -25,6 +25,7 @@ class ProductController:
                 name=data.name,
                 description=data.description,
                 price=data.price,
+                category=data.category,
                 stock_quantity=data.stock_quantity or 0
             )
             
@@ -74,6 +75,8 @@ class ProductController:
                 product.description = data.description
             if data.price is not None:
                 product.price = data.price
+            if data.category is not None:
+                product.category = data.category
             if data.stock_quantity is not None:
                 product.stock_quantity = data.stock_quantity
             
