@@ -4,9 +4,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import logging
 
-from src.infrastructure.config import get_settings
-from src.infrastructure.database import init_database, close_database
-from src.interfaces.api import api_router, setup_cors
+from src.product_service.infrastructure.config import get_settings
+from src.product_service.infrastructure.database import init_database, close_database
+from src.product_service.interfaces.api import api_router, setup_cors
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
