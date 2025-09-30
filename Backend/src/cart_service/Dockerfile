@@ -18,11 +18,11 @@ RUN pip install --no-cache-dir -e .
 COPY . .
 
 # Expose port
-EXPOSE 8010
+EXPOSE 8003
 
 # Set environment variables
 ENV PYTHONPATH=/app/src
-ENV PORT=8010
+ENV PORT=8003
 
 # Run the application
-CMD ["uvicorn", "cart_service.main:app", "--host", "0.0.0.0", "--port", "8010"]
+CMD ["uvicorn", "cart_service.main:app", "--host", "0.0.0.0", "--port", "8003"]

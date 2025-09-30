@@ -111,7 +111,7 @@ services:
     depends_on:
       - cart_db
     ports:
-      - "8010:8010"
+      - "8003:8003"
     environment:
       - DATABASE_URL=postgresql+asyncpg://cart_svc:cart_pass@cart_db:5432/cartdb
       - DATABASE_ECHO=false
@@ -127,7 +127,7 @@ services:
       POSTGRES_PASSWORD: order_pass
       POSTGRES_DB: orderdb
     ports:
-      - "5434:5432"
+      - "5437:5432"
     volumes:
       - order_service_data:/var/lib/postgresql/data
 
