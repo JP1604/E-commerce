@@ -61,7 +61,7 @@ services:
 
 
   cart_db:
-    image: postgres:16-alpine
+    image: postgres:15
     container_name: cart_service_db
     restart: always
     environment:
@@ -69,7 +69,7 @@ services:
       POSTGRES_PASSWORD: cart_pass
       POSTGRES_DB: cartdb
     ports:
-      - "5434:5432"
+      - "5436:5432"
     volumes:
       - cart_service_data:/var/lib/postgresql/data
 
@@ -82,10 +82,12 @@ services:
     depends_on:
       - cart_db
     ports:
-      - "8002:8002"
+      - "8010:8010"
     environment:
       - DATABASE_URL=postgresql+asyncpg://cart_svc:cart_pass@cart_db:5432/cartdb
       - DATABASE_ECHO=false
+    volumes:
+      - ./Backend:/app
 
   order_db:
     image: postgres:15
