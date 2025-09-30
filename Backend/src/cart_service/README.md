@@ -63,7 +63,7 @@ Microservicio de carrito de compras para el sistema de e-commerce, implementado 
 - `DATABASE_USER`: Usuario de la base de datos (default: postgres)
 - `DATABASE_PASSWORD`: Contraseña de la base de datos (default: password)
 - `DEBUG`: Modo debug (default: False)
-- `PORT`: Puerto del servicio (default: 8002)
+- `PORT`: Puerto del servicio (default: 8010)
 
 ## Ejecución
 
@@ -76,7 +76,7 @@ docker-compose up cart_service
 ```bash
 cd Backend/src/cart_service
 pip install -e .
-uvicorn cart_service.main:app --host 0.0.0.0 --port 8002
+uvicorn cart_service.main:app --host 0.0.0.0 --port 8010
 ```
 
 ## Estructura del Proyecto

@@ -81,7 +81,7 @@ services:
     depends_on:
       - cart_db
     ports:
-      - "8002:8002"
+      - "8010:8010"
     environment:
       - DATABASE_URL=postgresql+asyncpg://cart_svc:cart_pass@cart_db:5432/cartdb
       - DATABASE_ECHO=false
