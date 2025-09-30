@@ -40,7 +40,7 @@ async def close_database():
     await engine.dispose()
 
 
-async def get_db_session() -> AsyncSession:
+async def get_db_session():
     """Get database session."""
     async with AsyncSessionLocal() as session:
         try:

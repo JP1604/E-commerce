@@ -17,7 +17,7 @@ class CreateOrderUseCase:
     async def execute(self, order_data: OrderCreateDTO) -> OrderResponseDTO:
         """Execute create order use case."""
         # Create new order
-        order = Order(id_user=order_data.id_user)
+        order = Order(id_user=order_data.id_user, total=0.0)
         
         # Add items to order
         for item_data in order_data.items:
