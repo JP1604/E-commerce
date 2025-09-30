@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from uuid import UUID
 
 from user_service.interfaces.api.controllers.user_controller import UserController
-from user_service.application.dtos import UserCreateDTO, UserUpdateDTO
+from user_service.application.dtos import UserCreateDTO, UserUpdateDTO, LoginDTO
 from user_service.container import SimpleContainer, get_container
 
 
@@ -50,3 +50,10 @@ async def delete_user(
 ):
     return await UserController.delete_user(user_id, container)
 
+
+@api_router.post("/login")
+async def login(
+    data: LoginDTO,
+    container: SimpleContainer = Depends(get_container),
+):
+    return await UserController.login(data, container)

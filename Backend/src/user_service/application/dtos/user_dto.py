@@ -18,6 +18,7 @@ class UserUpdateDTO(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None
+    current_password: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
 
@@ -43,3 +44,7 @@ class UserResponseDTO(BaseModel):
             last_updated=user.updated_at,
         )
 
+
+class LoginDTO(BaseModel):
+    email: EmailStr
+    password: str

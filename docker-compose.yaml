@@ -57,8 +57,38 @@ services:
       - USER_DATABASE_URL=postgresql+asyncpg://user_svc:user_pass@user_db:5432/userdb
       - USER_DATABASE_ECHO=false
     volumes:
-      - ./backend:/app
+      - ./Backend:/app
+
+  delivery_db:
+    image: postgres:16-alpine
+    container_name: delivery_service_db
+    restart: always
+    environment:
+      POSTGRES_USER: delivery_svc
+      POSTGRES_PASSWORD: delivery_pass
+      POSTGRES_DB: deliverydb
+    ports:
+      - "5434:5432"
+    volumes:
+      - delivery_service_data:/var/lib/postgresql/data
+
+  delivery_service:
+    build:
+      context: ./Backend
+      dockerfile: src/delivery_service/Dockerfile
+    container_name: delivery_service
+    restart: always
+    depends_on:
+      - delivery_db
+    ports:
+      - "8002:8002"
+    environment:
+      - DELIVERY_DATABASE_URL=postgresql+asyncpg://delivery_svc:delivery_pass@delivery_db:5432/deliverydb
+      - DELIVERY_DATABASE_ECHO=false
+    volumes:
+      - ./Backend:/app
 
 volumes:
   ecommerce_data:
   user_service_data:
+  delivery_service_data:
