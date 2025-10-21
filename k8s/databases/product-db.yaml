@@ -1,0 +1,97 @@
+# Product Service Database
+# ¿Qué es? Define cómo se despliega PostgreSQL para el servicio de productos
+# Incluye: PersistentVolume (almacenamiento), Deployment (el contenedor) y Service (acceso de red)
+
+---
+# PersistentVolumeClaim - Solicitud de almacenamiento
+# ¿Para qué? Guarda los datos de la BD de forma permanente
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: product-db-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce  # Solo un pod puede escribir a la vez
+  resources:
+    requests:
+      storage: 5Gi  # 5 GB de almacenamiento
+
+---
+# Deployment - Define cómo ejecutar el contenedor de PostgreSQL
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-db
+  namespace: default
+  labels:
+    app: product-db
+spec:
+  replicas: 1  # Solo 1 instancia de la BD
+  selector:
+    matchLabels:
+      app: product-db
+  template:
+    metadata:
+      labels:
+        app: product-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15  # Imagen de PostgreSQL 15
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        # Variables de entorno para configurar PostgreSQL
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: PRODUCT_DB_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: PRODUCT_DB_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: PRODUCT_DB_NAME
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data  # Donde se guardan los datos
+        resources:
+          requests:
+            memory: "256Mi"  # Mínimo de RAM
+            cpu: "250m"      # Mínimo de CPU (0.25 cores)
+          limits:
+            memory: "512Mi"  # Máximo de RAM
+            cpu: "500m"      # Máximo de CPU (0.5 cores)
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: product-db-pvc
+
+---
+# Service - Expone la base de datos dentro del cluster
+# ¿Para qué? Permite que otros servicios se conecten a esta BD
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-db
+  namespace: default
+  labels:
+    app: product-db
+spec:
+  type: ClusterIP  # Solo accesible dentro del cluster
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  selector:
+    app: product-db
