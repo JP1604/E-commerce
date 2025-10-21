@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Ignore Specstory workspace folder
+.specstory/
 # C extensions
 *.so
 
