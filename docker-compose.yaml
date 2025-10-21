@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   product_db:
-    image: postgres:15
+    image: postgres:16
     container_name: product_service_db
     restart: always
     environment:
@@ -13,6 +13,11 @@ services:
       - "5432:5432"
     volumes:
       - ecommerce_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecommerce_user -d ecommerce"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   product_service:
     build:
@@ -21,7 +26,8 @@ services:
     container_name: product_service
     restart: always
     depends_on:
-      - product_db
+      product_db:
+        condition: service_healthy
     ports:
       - "8000:8000"
     environment:
@@ -31,7 +37,7 @@ services:
       - ./Backend:/app
 
   user_db:
-    image: postgres:15
+    image: postgres:16
     container_name: user_service_db
     restart: always
     environment:
@@ -42,6 +48,11 @@ services:
       - "5433:5432"
     volumes:
       - user_service_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user_svc -d userdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   user_service:
     build:
@@ -50,7 +61,8 @@ services:
     container_name: user_service
     restart: always
     depends_on:
-      - user_db
+      user_db:
+        condition: service_healthy
     ports:
       - "8001:8001"
     environment:
@@ -115,6 +127,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://cart_svc:cart_pass@cart_db:5432/cartdb
       - DATABASE_ECHO=false
+      - PRODUCT_SERVICE_URL=http://product_service:8000
     volumes:
       - ./Backend:/app
 
@@ -191,6 +204,33 @@ services:
       - ORDER_SERVICE_URL=http://order_service:8005
       - USER_SERVICE_URL=http://user_service:8001
 
+    volumes:
+      - ./Backend:/app
+
+  api_gateway:
+    build:
+      context: ./Backend
+      dockerfile: src/api_gateway/Dockerfile
+    container_name: api_gateway
+    restart: always
+    depends_on:
+      - product_service
+      - user_service
+      - delivery_service
+      - cart_service
+      - order_service
+      - order_validation_service
+      - payment_service
+    environment:
+      - PRODUCT_SERVICE_URL=http://product_service:8000
+      - USER_SERVICE_URL=http://user_service:8001
+      - DELIVERY_SERVICE_URL=http://delivery_service:8002
+      - CART_SERVICE_URL=http://cart_service:8003
+      - ORDER_SERVICE_URL=http://order_service:8005
+      - ORDER_VALIDATION_SERVICE_URL=http://order_validation_service:8006
+      - PAYMENT_SERVICE_URL=http://payment_service:8007
+    ports:
+      - "8080:8080"
     volumes:
       - ./Backend:/app
 

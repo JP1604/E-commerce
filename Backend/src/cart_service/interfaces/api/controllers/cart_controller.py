@@ -105,7 +105,6 @@ async def add_item_to_cart(
         use_case = AddItemToCartUseCase(
             container.cart_repository,
             container.cart_item_repository,
-            container.product_repository,
         )
         cart_item = await use_case.execute(
             cart_id=cart_id,

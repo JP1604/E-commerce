@@ -26,5 +26,8 @@ class Settings:
         self.host: str = os.getenv("HOST", "0.0.0.0")
         self.port: int = int(os.getenv("PORT", "8003"))
 
+        # External services
+        self.product_service_url: str = os.getenv("PRODUCT_SERVICE_URL", "http://product_service:8000")
+
 
 settings = Settings()

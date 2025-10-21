@@ -31,6 +31,16 @@ async def get_product(
     """Get a product by ID."""
     return await ProductController.get_product(product_id, container)
 
+
+@api_router.get("/products/{product_id}/stock")
+async def get_product_stock(
+    product_id: UUID,
+    container: SimpleContainer = Depends(get_container),
+):
+    """Get available stock for a product."""
+    dto = await ProductController.get_product(product_id, container)
+    return {"available_stock": dto.stock_quantity}
+
 @api_router.put("/products/{product_id}")
 async def update_product(
     product_id: UUID,

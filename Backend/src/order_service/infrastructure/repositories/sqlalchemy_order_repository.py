@@ -45,9 +45,14 @@ class SQLAlchemyOrderRepository(OrderRepository):
         
         self.session.add(order_model)
         await self.session.commit()
-        await self.session.refresh(order_model)
+
+        # Re-load with items eagerly to avoid async lazy-load during mapping
+        from sqlalchemy import select
+        stmt = select(OrderModel).options(selectinload(OrderModel.items)).where(OrderModel.id_order == order_model.id_order)
+        result = await self.session.execute(stmt)
+        loaded_order_model = result.scalar_one()
         
-        return self._to_domain_entity(order_model)
+        return self._to_domain_entity(loaded_order_model)
 
     async def get_by_id(self, order_id: UUID) -> Optional[Order]:
         """Get order by ID."""
