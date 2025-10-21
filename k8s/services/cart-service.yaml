@@ -1,0 +1,97 @@
+# Cart Service
+# Servicio de gestión del carrito de compras (Puerto 8003)
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-service
+  namespace: default
+  labels:
+    app: cart-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cart-service
+  template:
+    metadata:
+      labels:
+        app: cart-service
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox:1.35
+        command: ['sh', '-c', 'until nc -z cart-db 5432; do echo waiting for db; sleep 2; done']
+      
+      containers:
+      - name: cart-service
+        image: cart-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8003
+          name: http
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: CART_DB_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: CART_DB_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: CART_DB_NAME
+        - name: DATABASE_URL
+          value: "postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@cart-db:5432/$(POSTGRES_DB)"
+        - name: DATABASE_ECHO
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: DATABASE_ECHO
+        
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8003
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8003
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cart-service
+  namespace: default
+  labels:
+    app: cart-service
+spec:
+  type: NodePort
+  ports:
+  - port: 8003
+    targetPort: 8003
+    nodePort: 30003
+    protocol: TCP
+    name: http
+  selector:
+    app: cart-service
