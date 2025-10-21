@@ -1,0 +1,87 @@
+# Order Validation Service
+# Servicio de validación de órdenes (Puerto 8006)
+# NOTA: Este servicio NO tiene base de datos, solo valida
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-validation-service
+  namespace: default
+  labels:
+    app: order-validation-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-validation-service
+  template:
+    metadata:
+      labels:
+        app: order-validation-service
+    spec:
+      containers:
+      - name: order-validation-service
+        image: order-validation-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8006
+          name: http
+        env:
+        # Este servicio necesita comunicarse con otros servicios
+        - name: USER_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: USER_SERVICE_URL
+        - name: PRODUCT_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: PRODUCT_SERVICE_URL
+        - name: ORDER_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: ORDER_SERVICE_URL
+        
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8006
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8006
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        
+        resources:
+          requests:
+            memory: "128Mi"  # Menos recursos, no usa BD
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-validation-service
+  namespace: default
+  labels:
+    app: order-validation-service
+spec:
+  type: NodePort
+  ports:
+  - port: 8006
+    targetPort: 8006
+    nodePort: 30006
+    protocol: TCP
+    name: http
+  selector:
+    app: order-validation-service

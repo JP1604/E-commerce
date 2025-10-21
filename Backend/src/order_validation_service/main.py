@@ -39,6 +39,12 @@ async def root():
     return {"message": "Order Validation Service", "version": "0.1.0", "docs": "/docs"}
 
 
+@app.get("/health")
+async def health():
+    """Health check endpoint for Kubernetes."""
+    return {"status": "healthy", "service": "order-validation-service"}
+
+
 if __name__ == "__main__":
     import uvicorn
 

@@ -1,0 +1,109 @@
+# Product Service
+# Servicio de gestión de productos (Puerto 8000)
+
+---
+# Deployment - Define cómo ejecutar tu aplicación
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: default
+  labels:
+    app: product-service
+spec:
+  replicas: 2  # 2 instancias para alta disponibilidad
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      # initContainers: Espera a que la BD esté lista antes de iniciar
+      initContainers:
+      - name: wait-for-db
+        image: busybox:1.35
+        command: ['sh', '-c', 'until nc -z product-db 5432; do echo waiting for db; sleep 2; done']
+      
+      containers:
+      - name: product-service
+        # IMPORTANTE: Cambia esta imagen por la tuya cuando la construyas
+        # Ejemplo: tu-usuario/product-service:v1.0
+        image: product-service:latest
+        imagePullPolicy: Never  # Usa imagen local (para desarrollo)
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        # Primero definimos las variables individuales
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: PRODUCT_DB_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: PRODUCT_DB_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: PRODUCT_DB_NAME
+        # Luego las usamos en la URL de conexión
+        - name: DATABASE_URL
+          value: "postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@product-db:5432/$(POSTGRES_DB)"
+        - name: DATABASE_ECHO
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: DATABASE_ECHO
+        
+        # Health checks - K8s verifica si el servicio está sano
+        livenessProbe:  # Si falla, reinicia el contenedor
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:  # Si falla, no envía tráfico
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+---
+# Service - Expone el microservicio
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service
+  namespace: default
+  labels:
+    app: product-service
+spec:
+  type: NodePort  # Accesible desde fuera del cluster
+  ports:
+  - port: 8000      # Puerto interno del cluster
+    targetPort: 8000 # Puerto del contenedor
+    nodePort: 30000  # Puerto externo (30000-32767)
+    protocol: TCP
+    name: http
+  selector:
+    app: product-service

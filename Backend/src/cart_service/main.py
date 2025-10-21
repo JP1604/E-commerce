@@ -42,6 +42,12 @@ app = create_app()
 
 
 @app.get("/")
-async def health_check():
-    """Health check endpoint."""
+async def root():
+    """Root endpoint."""
+    return {"status": "healthy", "service": "cart-service"}
+
+
+@app.get("/health")
+async def health():
+    """Health check endpoint for Kubernetes."""
     return {"status": "healthy", "service": "cart-service"}
