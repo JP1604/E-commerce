@@ -37,6 +37,9 @@ data:
   ORDER_VALIDATION_SERVICE_URL: "http://order-validation-service:8006"
   PAYMENT_SERVICE_URL: "http://payment-service:8007"
   
+  # API Gateway URL (punto de entrada principal)
+  API_GATEWAY_URL: "http://api-gateway:8080"
+  
   # Configuración general
   DATABASE_ECHO: "false"
   DEBUG: "false"

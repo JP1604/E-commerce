@@ -34,13 +34,14 @@ Write-Host ""
 
 # Lista de servicios para construir
 $services = @(
-    @{Name="product-service"; Path="src/product_service/Dockerfile"}
-    @{Name="user-service"; Path="src/user_service/Dockerfile"}
-    @{Name="delivery-service"; Path="src/delivery_service/Dockerfile"}
-    @{Name="cart-service"; Path="src/cart_service/Dockerfile"}
-    @{Name="order-service"; Path="src/order_service/Dockerfile"}
-    @{Name="order-validation-service"; Path="src/order_validation_service/Dockerfile"}
-    @{Name="payment-service"; Path="src/payment_service/Dockerfile"}
+    @{Name="api-gateway"; Path="src/api-gateway/Dockerfile"}
+    @{Name="product-service"; Path="src/product-service/Dockerfile"}
+    @{Name="user-service"; Path="src/user-service/Dockerfile"}
+    @{Name="delivery-service"; Path="src/delivery-service/Dockerfile"}
+    @{Name="cart-service"; Path="src/cart-service/Dockerfile"}
+    @{Name="order-service"; Path="src/order-service/Dockerfile"}
+    @{Name="order-validation-service"; Path="src/order-validation-service/Dockerfile"}
+    @{Name="payment-service"; Path="src/payment-service/Dockerfile"}
 )
 
 $successCount = 0
@@ -85,7 +86,7 @@ Write-Host ""
 
 # Listar imagenes creadas
 Write-Host "Imagenes Docker disponibles:" -ForegroundColor Cyan
-docker images | Select-String -Pattern "(product|user|delivery|cart|order|payment)-service"
+docker images | Select-String -Pattern "(api-gateway|product|user|delivery|cart|order|payment)-service"
 Write-Host ""
 
 if ($failCount -eq 0) {

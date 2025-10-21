@@ -8,27 +8,26 @@ Flow:
 """
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 import httpx
 
 from api_gateway.infrastructure.config.settings import get_settings
 from api_gateway.infrastructure.http.client import get_http_client
+from api_gateway.interfaces.api.schemas import CheckoutRequest, OrderCreate, PaymentInfo, DeliveryBooking, RefundRequest, DeliveryStateChange
 
 
 router = APIRouter()
 
 
-@router.post("/")
-async def checkout(payload: dict, client: httpx.AsyncClient = Depends(get_http_client)):
+@router.post("/", status_code=201)
+async def checkout(payload: CheckoutRequest, client: httpx.AsyncClient = Depends(get_http_client)):
     settings = get_settings()
 
     # 1) Create order
     try:
         create_order_resp = await client.post(
             f"{settings.order_service_url}/api/v1/orders/",
-            json={
-                "id_user": payload["id_user"],
-                "items": payload["items"],
-            },
+            json={"id_user": payload.id_user, "items": [i.dict(by_alias=True, exclude_none=True) for i in payload.items]},
         )
         create_order_resp.raise_for_status()
     except httpx.HTTPError as exc:
@@ -44,12 +43,12 @@ async def checkout(payload: dict, client: httpx.AsyncClient = Depends(get_http_c
             f"{settings.order_validation_service_url}/api/v1/validations/validate",
             json={
                 "id_order": order_id,
-                "id_user": payload["id_user"],
+                "id_user": payload.id_user,
                 "items": [{
-                    "id_product": item["id_product"],
-                    "quantity": item["quantity"],
-                    "unit_price": item["unit_price"],
-                } for item in payload["items"]],
+                    "id_product": (item.id_product or item.product_id),
+                    "quantity": item.quantity,
+                    "unit_price": item.unit_price,
+                } for item in payload.items],
                 "total": total,
             },
         )
@@ -66,23 +65,14 @@ async def checkout(payload: dict, client: httpx.AsyncClient = Depends(get_http_c
 
     # 3) Process payment
     try:
-        payment_resp = await client.post(
-            f"{settings.payment_service_url}/api/v1/payments/process",
-            json={
-                "id_order": order_id,
-                "id_user": payload["id_user"],
-                "amount": total,
-                "method": payload["payment"]["method"],
-                "currency": payload["payment"].get("currency", "USD"),
-                "description": payload["payment"].get("description"),
-                "card_number": payload["payment"].get("card_number"),
-                "card_holder_name": payload["payment"].get("card_holder_name"),
-                "card_expiry_month": payload["payment"].get("card_expiry_month"),
-                "card_expiry_year": payload["payment"].get("card_expiry_year"),
-                "card_cvv": payload["payment"].get("card_cvv"),
-                "billing_address": payload["payment"].get("billing_address"),
-            },
-        )
+        payment = payload.payment
+        payment_payload = {}
+        if payment:
+            payment_payload = payment.dict(exclude_none=True)
+
+        payment_payload.update({"id_order": order_id, "id_user": payload.id_user, "amount": total})
+
+        payment_resp = await client.post(f"{settings.payment_service_url}/api/v1/payments/process", json=payment_payload)
         payment_resp.raise_for_status()
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail=f"Payment processing failed: {exc}")
@@ -113,7 +103,7 @@ async def checkout(payload: dict, client: httpx.AsyncClient = Depends(get_http_c
     }
 
 
-@router.post("/from-cart")
+@router.post("/from-cart", status_code=201)
 async def checkout_from_cart(user_id: str, client: httpx.AsyncClient = Depends(get_http_client)):
     """Checkout by reading the user's active cart."""
     settings = get_settings()
@@ -250,17 +240,12 @@ async def cancel_order(order_id: str, client: httpx.AsyncClient = Depends(get_ht
         raise HTTPException(status_code=502, detail=f"Order update failed: {exc}")
 
 
-@router.post("/{order_id}/delivery/book")
-async def book_delivery(order_id: str, payload: dict, client: httpx.AsyncClient = Depends(get_http_client)):
+@router.post("/{order_id}/delivery/book", status_code=201)
+async def book_delivery(order_id: str, payload: DeliveryBooking, client: httpx.AsyncClient = Depends(get_http_client)):
     """Create a delivery booking for an order in Delivery Service."""
     settings = get_settings()
     try:
-        body = {
-            "order_id": order_id,
-            "delivery_booked_schedule": payload["delivery_booked_schedule"],
-            "booking_start": payload["booking_start"],
-            "booking_end": payload["booking_end"],
-        }
+        body = {"order_id": order_id, **payload.dict(exclude_none=True)}
         resp = await client.post(f"{settings.delivery_service_url}/api/v1/deliveries/", json=body)
         resp.raise_for_status()
         return resp.json()
@@ -269,13 +254,13 @@ async def book_delivery(order_id: str, payload: dict, client: httpx.AsyncClient 
 
 
 @router.post("/delivery/{delivery_id}/state")
-async def change_delivery_state(delivery_id: str, payload: dict, client: httpx.AsyncClient = Depends(get_http_client)):
+async def change_delivery_state(delivery_id: str, payload: DeliveryStateChange, client: httpx.AsyncClient = Depends(get_http_client)):
     """Change delivery state (BOOKED, CONFIRMED, CANCELLED)."""
     settings = get_settings()
     try:
         resp = await client.post(
             f"{settings.delivery_service_url}/api/v1/deliveries/{delivery_id}/state",
-            params={"new_state": payload["new_state"]},
+            params={"new_state": payload.new_state},
         )
         resp.raise_for_status()
         return resp.json()
@@ -284,13 +269,13 @@ async def change_delivery_state(delivery_id: str, payload: dict, client: httpx.A
 
 
 @router.post("/{payment_id}/refund")
-async def refund_payment(payment_id: str, payload: dict, client: httpx.AsyncClient = Depends(get_http_client)):
+async def refund_payment(payment_id: str, payload: RefundRequest, client: httpx.AsyncClient = Depends(get_http_client)):
     """Trigger a refund via Payment Service."""
     settings = get_settings()
     try:
         resp = await client.post(
             f"{settings.payment_service_url}/api/v1/payments/{payment_id}/refund",
-            json=payload,
+            json=payload.dict(exclude_none=True),
         )
         resp.raise_for_status()
         return resp.json()

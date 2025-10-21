@@ -6,17 +6,18 @@ import httpx
 
 from api_gateway.infrastructure.config.settings import get_settings
 from api_gateway.infrastructure.http.client import get_http_client
+from api_gateway.interfaces.api.schemas import CartCreate, AddItemRequest
 
 
 router = APIRouter()
 
 
-@router.post("/")
-async def create_cart(payload: dict, client: httpx.AsyncClient = Depends(get_http_client)):
+@router.post("/", status_code=201)
+async def create_cart(payload: CartCreate, client: httpx.AsyncClient = Depends(get_http_client)):
     settings = get_settings()
     url = f"{settings.cart_service_url}/api/v1/carts/"
     try:
-        resp = await client.post(url, json=payload)
+        resp = await client.post(url, json=payload.dict(by_alias=True, exclude_none=True))
         resp.raise_for_status()
         return resp.json()
     except httpx.HTTPError as exc:
@@ -24,8 +25,8 @@ async def create_cart(payload: dict, client: httpx.AsyncClient = Depends(get_htt
 
 
 # Accept no-trailing-slash as well for POST
-@router.post("")
-async def create_cart_no_slash(payload: dict, client: httpx.AsyncClient = Depends(get_http_client)):
+@router.post("", status_code=201)
+async def create_cart_no_slash(payload: CartCreate, client: httpx.AsyncClient = Depends(get_http_client)):
     return await create_cart(payload, client)
 
 
@@ -43,14 +44,14 @@ async def get_user_cart(user_id: str, client: httpx.AsyncClient = Depends(get_ht
         raise HTTPException(status_code=502, detail=f"Cart service error: {exc}")
 
 
-@router.post("/{cart_id}/items")
-async def add_item(cart_id: str, payload: dict, client: httpx.AsyncClient = Depends(get_http_client)):
+@router.post("/{cart_id}/items", status_code=201)
+async def add_item(cart_id: str, payload: AddItemRequest, client: httpx.AsyncClient = Depends(get_http_client)):
     settings = get_settings()
     url = f"{settings.cart_service_url}/api/v1/carts/{cart_id}/items"
     try:
-        product_id = payload.get("product_id")
-        quantity = payload.get("quantity")
-        unit_price = payload.get("unit_price")
+        product_id = payload.product_id
+        quantity = payload.quantity
+        unit_price = payload.unit_price
 
         # Always use Product Service as source of truth
         if unit_price is None:

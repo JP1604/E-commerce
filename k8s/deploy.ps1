@@ -103,6 +103,7 @@ Write-Host ""
 # Desplegar microservicios
 Write-Host "Paso 6: Desplegando microservicios..." -ForegroundColor Yellow
 $services = @(
+    "api-gateway",
     "product-service",
     "user-service",
     "delivery-service",
@@ -142,6 +143,9 @@ $nodeIP = "localhost"
 
 Write-Host "URLs de acceso a los servicios:" -ForegroundColor Cyan
 Write-Host ""
+Write-Host "  🚀 API Gateway (Principal):    http://${nodeIP}:30080/docs" -ForegroundColor Green
+Write-Host ""
+Write-Host "  Servicios individuales:" -ForegroundColor Yellow
 Write-Host "  Product Service:           http://${nodeIP}:30000/docs" -ForegroundColor White
 Write-Host "  User Service:              http://${nodeIP}:30001/docs" -ForegroundColor White
 Write-Host "  Delivery Service:          http://${nodeIP}:30002/docs" -ForegroundColor White

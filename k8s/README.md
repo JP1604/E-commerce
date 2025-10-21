@@ -136,6 +136,12 @@ kubectl get services
 
 Una vez desplegado, accede a la documentación interactiva (Swagger):
 
+### 🚀 API Gateway (Punto de Entrada Principal)
+| Servicio | URL | Descripción |
+|----------|-----|-------------|
+| **API Gateway** | http://localhost:30080/docs | **Punto de entrada único** - Accede a todos los servicios |
+
+### 🔧 Servicios Individuales
 | Servicio | URL | Descripción |
 |----------|-----|-------------|
 | **Product Service** | http://localhost:30000/docs | Gestión de productos |
@@ -145,6 +151,13 @@ Una vez desplegado, accede a la documentación interactiva (Swagger):
 | **Order Service** | http://localhost:30005/docs | Gestión de órdenes |
 | **Order Validation** | http://localhost:30006/docs | Validación de órdenes |
 | **Payment Service** | http://localhost:30007/docs | Procesamiento de pagos |
+
+### 📡 Endpoints del API Gateway
+- **Productos**: `http://localhost:30080/api/products/`
+- **Usuarios**: `http://localhost:30080/api/users/`
+- **Carritos**: `http://localhost:30080/api/carts/`
+- **Órdenes**: `http://localhost:30080/api/orders/`
+- **Checkout**: `http://localhost:30080/api/checkout/`
 
 ## 📊 Comandos Útiles
 
