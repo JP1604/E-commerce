@@ -1,0 +1,108 @@
+# Payment Service
+# Servicio de procesamiento de pagos (Puerto 8007)
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: default
+  labels:
+    app: payment-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox:1.35
+        command: ['sh', '-c', 'until nc -z payment-db 5432; do echo waiting for db; sleep 2; done']
+      
+      containers:
+      - name: payment-service
+        image: payment-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8007
+          name: http
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: PAYMENT_DB_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: PAYMENT_DB_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: PAYMENT_DB_NAME
+        - name: PAYMENT_DATABASE_URL
+          value: "postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@payment-db:5432/$(POSTGRES_DB)"
+        - name: PAYMENT_DATABASE_ECHO
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: DATABASE_ECHO
+        # URLs de otros servicios que necesita
+        - name: ORDER_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: ORDER_SERVICE_URL
+        - name: USER_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ecommerce-config
+              key: USER_SERVICE_URL
+        
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8007
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8007
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: default
+  labels:
+    app: payment-service
+spec:
+  type: NodePort
+  ports:
+  - port: 8007
+    targetPort: 8007
+    nodePort: 30007
+    protocol: TCP
+    name: http
+  selector:
+    app: payment-service
