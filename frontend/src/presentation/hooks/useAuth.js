@@ -11,12 +11,15 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: (credentials) => userRepository.login(credentials),
     onSuccess: (user) => {
+      console.log('✅ Login exitoso, datos recibidos:', user);
       setUser(user);
+      console.log('✅ Usuario guardado en store');
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       navigate('/');
     },
     onError: (error) => {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
+      console.error('❌ Error response:', error.response?.data);
     },
   });
 };

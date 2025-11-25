@@ -58,13 +58,13 @@ class UserController:
         return {"message": "User deleted successfully"}
 
     @staticmethod
-    async def login(data: LoginDTO, container: SimpleContainer = Depends(get_container)) -> dict:
-        # Placeholder login: verify email+password only
+    async def login(data: LoginDTO, container: SimpleContainer = Depends(get_container)) -> UserResponseDTO:
+        # Verify email and password
         user = await container.user_repository.find_by_email(data.email)
         if not user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         if not verify_password(data.password, user.hash_password):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-        # No JWT issued here, just a confirmation for now 
-        return {"status": "ok", "user_id": str(user.id)}
+        # Return complete user data (without password hash)
+        return UserResponseDTO.from_entity(user)
 

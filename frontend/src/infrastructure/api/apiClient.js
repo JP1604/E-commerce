@@ -1,13 +1,13 @@
 import axios from 'axios';
 
 const API_URLS = {
-  products: import.meta.env.VITE_PRODUCT_SERVICE_URL || 'http://localhost:8000',
-  users: import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:8001',
-  delivery: import.meta.env.VITE_DELIVERY_SERVICE_URL || 'http://localhost:8002',
-  cart: import.meta.env.VITE_CART_SERVICE_URL || 'http://localhost:8003',
-  orders: import.meta.env.VITE_ORDER_SERVICE_URL || 'http://localhost:8005',
-  validation: import.meta.env.VITE_VALIDATION_SERVICE_URL || 'http://localhost:8006',
-  payments: import.meta.env.VITE_PAYMENT_SERVICE_URL || 'http://localhost:8007',
+  products: import.meta.env.VITE_PRODUCT_SERVICE_URL || 'http://localhost:30000',
+  users: import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:30001',
+  delivery: import.meta.env.VITE_DELIVERY_SERVICE_URL || 'http://localhost:30002',
+  cart: import.meta.env.VITE_CART_SERVICE_URL || 'http://localhost:30003',
+  orders: import.meta.env.VITE_ORDER_SERVICE_URL || 'http://localhost:30005',
+  validation: import.meta.env.VITE_VALIDATION_SERVICE_URL || 'http://localhost:30006',
+  payments: import.meta.env.VITE_PAYMENT_SERVICE_URL || 'http://localhost:30007',
 };
 
 const createApiClient = (baseURL) => {

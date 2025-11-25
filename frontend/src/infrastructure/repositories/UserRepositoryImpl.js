@@ -28,11 +28,15 @@ export class UserRepositoryImpl {
 
   async login(credentials) {
     // En el backend deberías tener un endpoint /users/login
-    // Por ahora simulamos buscando por email
+    console.log('🔐 Intentando login con:', credentials.email);
     try {
       const response = await userApi.post('/users/login', credentials);
-      return createUser(response.data);
+      console.log('✅ Respuesta del backend:', response.data);
+      const user = createUser(response.data);
+      console.log('✅ Usuario creado:', user);
+      return user;
     } catch (error) {
+      console.error('❌ Error en login:', error.response?.data || error.message);
       // Si no existe endpoint de login, buscar por email
       if (error.response?.status === 404) {
         const allUsersResponse = await userApi.get('/users/');

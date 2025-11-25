@@ -14,10 +14,20 @@ export const ProductCard = ({ product, onViewDetails }) => {
   const addToCart = useAddToCart();
   const navigate = useNavigate();
   
+  // Cargar el carrito cuando el usuario esté autenticado
+  const { data: cartData, isLoading: isLoadingCart } = useCart();
+  
   // Log para depuración
   React.useEffect(() => {
-    console.log('📊 ProductCard Estado:', { isAuthenticated, user: user?.id, cartId: cart?.id });
-  }, [isAuthenticated, user, cart]);
+    console.log('📊 ProductCard Estado:', { 
+      isAuthenticated, 
+      user, 
+      userId: user?.id,
+      cartId: cart?.id, 
+      cartData,
+      localStorage: localStorage.getItem('user-storage')
+    });
+  }, [isAuthenticated, user, cart, cartData]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-ES', {
@@ -43,30 +53,34 @@ export const ProductCard = ({ product, onViewDetails }) => {
     }
 
     try {
-      let cartId = cart?.id; // Usar 'id' en lugar de 'id_cart'
+      let cartId = cart?.id;
       
       // Si no hay carrito, crear uno nuevo
       if (!cartId) {
         console.log('🆕 Creando carrito nuevo para usuario:', user.id);
-        const newCart = await cartRepository.create(user.id);
+        const newCart = await cartRepository.create(user.id, 'activo');
         console.log('✅ Carrito creado:', newCart);
-        cartId = newCart.id; // Usar 'id' en lugar de 'id_cart'
+        cartId = newCart.id;
         
-        // Actualizar el store
+        // Actualizar el store inmediatamente
         useCartStore.getState().setCart(newCart);
       }
 
-      console.log('✅ Carrito listo, agregando producto:', product.id, 'al carrito:', cartId);
-      const result = await addToCart.mutateAsync({
+      console.log('✅ Carrito listo con ID:', cartId);
+      console.log('📦 Agregando producto ID:', product.id);
+      
+      await addToCart.mutateAsync({
         cartId: cartId,
         productId: product.id,
         quantity: 1,
       });
-      console.log('✅ Producto agregado exitosamente:', result);
+      
+      console.log('✅ Producto agregado exitosamente');
       alert(`✅ ${product.name} agregado al carrito`);
     } catch (error) {
       console.error('❌ Error completo:', error);
-      alert(`❌ Error: ${error.message || 'No se pudo agregar el producto'}`);
+      console.error('❌ Respuesta del servidor:', error.response?.data);
+      alert(`❌ Error: ${error.response?.data?.detail || error.message || 'No se pudo agregar el producto'}`);
     }
   };
 
