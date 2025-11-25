@@ -17,6 +17,9 @@ class CartItemDTO(BaseModel):
     subtotal: float
     created_at: datetime
     updated_at: datetime
+    # Optional product info (enriched from Product Service)
+    product_name: Optional[str] = None
+    product_description: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -25,10 +28,8 @@ class CartItemDTO(BaseModel):
 class CartItemCreateDTO(BaseModel):
     """CartItem creation data transfer object."""
     
-    cart_id: UUID = Field(..., description="Cart ID")
-    product_id: UUID = Field(..., description="Product ID")
-    quantity: int = Field(..., gt=0, description="Quantity must be positive")
-    unit_price: float = Field(..., ge=0, description="Unit price must be non-negative")
+    product_id: UUID = Field(..., description="Product ID from Product Service")
+    quantity: int = Field(default=1, gt=0, description="Quantity must be positive")
 
     @validator('quantity')
     def validate_quantity(cls, v):
@@ -36,27 +37,14 @@ class CartItemCreateDTO(BaseModel):
             raise ValueError('Quantity must be positive')
         return v
 
-    @validator('unit_price')
-    def validate_unit_price(cls, v):
-        if v < 0:
-            raise ValueError('Unit price must be non-negative')
-        return v
-
 
 class CartItemUpdateDTO(BaseModel):
     """CartItem update data transfer object."""
     
-    quantity: Optional[int] = Field(None, gt=0, description="Quantity must be positive")
-    unit_price: Optional[float] = Field(None, ge=0, description="Unit price must be non-negative")
+    quantity: int = Field(..., gt=0, description="Quantity must be positive")
 
     @validator('quantity')
     def validate_quantity(cls, v):
-        if v is not None and v <= 0:
+        if v <= 0:
             raise ValueError('Quantity must be positive')
-        return v
-
-    @validator('unit_price')
-    def validate_unit_price(cls, v):
-        if v is not None and v < 0:
-            raise ValueError('Unit price must be non-negative')
         return v

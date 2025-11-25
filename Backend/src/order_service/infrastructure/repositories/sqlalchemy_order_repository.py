@@ -24,8 +24,10 @@ class SQLAlchemyOrderRepository(OrderRepository):
         order_model = OrderModel(
             id_order=order.id_order,
             id_user=order.id_user,
+            id_cart=order.id_cart,
             total=order.total,
             status=order.status,
+            payment_id=order.payment_id,
             created_at=order.created_at,
             updated_at=order.updated_at
         )
@@ -80,6 +82,7 @@ class SQLAlchemyOrderRepository(OrderRepository):
         # Update order fields
         order_model.total = order.total
         order_model.status = order.status
+        order_model.payment_id = order.payment_id
         order_model.updated_at = order.updated_at
         
         await self.session.commit()
@@ -128,8 +131,10 @@ class SQLAlchemyOrderRepository(OrderRepository):
         order = Order(
             id_order=order_model.id_order,
             id_user=order_model.id_user,
+            id_cart=order_model.id_cart,
             total=order_model.total,
             status=order_model.status,
+            payment_id=order_model.payment_id,
             created_at=order_model.created_at,
             updated_at=order_model.updated_at,
             items=items

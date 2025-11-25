@@ -28,9 +28,11 @@ class OrderItemResponseDTO(BaseModel):
 
 
 class OrderCreateDTO(BaseModel):
-    """DTO for creating orders."""
+    """DTO for creating orders - accepts cart_id OR items directly."""
     id_user: UUID
-    items: List[OrderItemCreateDTO] = Field(min_items=1)
+    id_cart: UUID
+    items: Optional[List[OrderItemCreateDTO]] = None  # Optional: if provided, uses these instead of fetching cart
+    payment_method: str = Field(default="credit_card")
 
 
 class OrderUpdateDTO(BaseModel):
@@ -42,8 +44,10 @@ class OrderResponseDTO(BaseModel):
     """DTO for order response."""
     id_order: UUID
     id_user: UUID
+    id_cart: UUID
     total: float
     status: OrderStatus
+    payment_id: Optional[UUID] = None
     created_at: datetime
     updated_at: Optional[datetime]
     items: List[OrderItemResponseDTO]

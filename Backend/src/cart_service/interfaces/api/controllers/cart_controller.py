@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ....application.dtos.cart_dto import CartDTO, CartCreateDTO, CartUpdateDTO
-from ....application.dtos.cart_item_dto import CartItemDTO, CartItemCreateDTO
+from ....application.dtos.cart_item_dto import CartItemDTO, CartItemCreateDTO, CartItemUpdateDTO
 from ....application.use_cases import (
     CreateCartUseCase,
     GetCartUseCase,
@@ -13,6 +13,8 @@ from ....application.use_cases import (
     DeleteCartUseCase,
     AddItemToCartUseCase,
     GetCartItemsUseCase,
+    UpdateCartItemUseCase,
+    RemoveItemFromCartUseCase,
 )
 from ....container import SimpleContainer, get_container
 
@@ -102,10 +104,13 @@ async def add_item_to_cart(
 ):
     """Add item to cart."""
     try:
+        from ....infrastructure.clients.product_client import ProductServiceClient
+        
+        product_client = ProductServiceClient()
         use_case = AddItemToCartUseCase(
             container.cart_repository,
             container.cart_item_repository,
-            container.product_repository,
+            product_client,
         )
         cart_item = await use_case.execute(
             cart_id=cart_id,
@@ -126,3 +131,48 @@ async def get_cart_items(
     use_case = GetCartItemsUseCase(container.cart_item_repository)
     cart_items = await use_case.execute(cart_id)
     return [CartItemDTO(**item.to_dict()) for item in cart_items]
+
+
+@router.put("/{cart_id}/items/{item_id}", response_model=CartItemDTO)
+async def update_cart_item(
+    cart_id: UUID,
+    item_id: UUID,
+    item_data: CartItemUpdateDTO,
+    container: SimpleContainer = Depends(get_container),
+):
+    """Update cart item quantity."""
+    try:
+        # Get existing item
+        items_use_case = GetCartItemsUseCase(container.cart_item_repository)
+        cart_items = await items_use_case.execute(cart_id)
+        
+        item = next((i for i in cart_items if str(i.id) == str(item_id)), None)
+        if not item:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart item not found")
+        
+        # Update quantity
+        item.quantity = item_data.quantity
+        item.update_timestamp()
+        
+        # Save
+        update_use_case = UpdateCartItemUseCase(container.cart_item_repository)
+        updated_item = await update_use_case.execute(item)
+        return CartItemDTO(**updated_item.to_dict())
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.delete("/{cart_id}/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_item_from_cart(
+    cart_id: UUID,
+    item_id: UUID,
+    container: SimpleContainer = Depends(get_container),
+):
+    """Remove item from cart."""
+    try:
+        use_case = RemoveItemFromCartUseCase(container.cart_item_repository)
+        success = await use_case.execute(item_id)
+        if not success:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart item not found")
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
