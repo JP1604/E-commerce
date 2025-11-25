@@ -45,13 +45,15 @@ export const useCart = () => {
 export const useAddToCart = () => {
   const queryClient = useQueryClient();
   const { addItem } = useCartStore();
+  const { user } = useUserStore();
 
   return useMutation({
     mutationFn: ({ cartId, productId, quantity }) =>
       cartRepository.addItem(cartId, productId, quantity),
     onSuccess: (data) => {
       addItem(data);
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      // invalidate the correct cart query for the current user
+      queryClient.invalidateQueries({ queryKey: ['cart', user?.id] });
     },
   });
 };
@@ -59,12 +61,33 @@ export const useAddToCart = () => {
 export const useRemoveFromCart = () => {
   const queryClient = useQueryClient();
   const { removeItem } = useCartStore();
+  const { user } = useUserStore();
 
   return useMutation({
     mutationFn: ({ cartId, itemId }) => cartRepository.removeItem(cartId, itemId),
-    onSuccess: (_, { itemId }) => {
+    onMutate: async ({ itemId }) => {
+      console.log('[useRemoveFromCart] onMutate itemId:', itemId);
+      // Optimistically remove from store and keep previous state for rollback
+      const previousItems = useCartStore.getState().items;
       removeItem(itemId);
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      return { previousItems };
+    },
+    onError: (err, variables, context) => {
+      console.error('Error removing item:', err);
+      if (context?.previousItems) {
+        useCartStore.getState().setItems(context.previousItems);
+      }
+    },
+    onSuccess: (data, { itemId }) => {
+      console.log('[useRemoveFromCart] onSuccess itemId:', itemId, 'response:', data);
+      // Remove item from store (fallback in case onMutate didn't persist to UI due to refetch)
+      removeItem(itemId);
+      // Invalidate the correct cart query to reload fresh data
+      queryClient.invalidateQueries({ queryKey: ['cart', user?.id] });
+    },
+    onSettled: () => {
+      // Ensure we always refresh the cart when mutation finishes
+      queryClient.invalidateQueries({ queryKey: ['cart', user?.id] });
     },
   });
 };
@@ -72,13 +95,31 @@ export const useRemoveFromCart = () => {
 export const useUpdateCartItem = () => {
   const queryClient = useQueryClient();
   const { updateItemQuantity } = useCartStore();
+  const { user } = useUserStore();
 
   return useMutation({
     mutationFn: ({ cartId, itemId, quantity }) =>
       cartRepository.updateItem(cartId, itemId, quantity),
+    onMutate: ({ itemId, quantity }) => {
+      const previousItems = useCartStore.getState().items;
+      // update optimistically
+      updateItemQuantity(itemId, quantity);
+      return { previousItems };
+    },
+    onError: (err, variables, context) => {
+      console.error('Error updating item quantity:', err);
+      if (context?.previousItems) {
+        useCartStore.getState().setItems(context.previousItems);
+      }
+    },
     onSuccess: (data) => {
+      console.log('Updated item response:', data);
       updateItemQuantity(data.id, data.quantity);
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      // refresh the specific user's cart query
+      queryClient.invalidateQueries({ queryKey: ['cart', user?.id] });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart', user?.id] });
     },
   });
 };

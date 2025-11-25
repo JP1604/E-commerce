@@ -19,6 +19,8 @@
 
 export const createCart = (data) => ({
   id: data.id || data.id_cart,
+  // preserve legacy server field name for compatibility with frontend that uses id_cart
+  id_cart: data.id_cart || data.id,
   user_id: data.user_id || data.id_user,
   status: data.status,
   items: data.items || [],
@@ -27,6 +29,8 @@ export const createCart = (data) => ({
 
 export const createCartItem = (data) => ({
   id: data.id || data.id_cart_item,
+  // preserve legacy server field names for compatibility
+  id_cart_item: data.id_cart_item || data.id,
   cart_id: data.cart_id || data.id_cart,
   product_id: data.product_id || data.id_product,
   quantity: data.quantity,

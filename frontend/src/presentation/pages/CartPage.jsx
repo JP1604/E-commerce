@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
 import { useUserStore } from '../store/userStore';
@@ -18,10 +18,15 @@ export const CartPage = () => {
   const total = items.reduce((sum, item) => sum + item.subtotal, 0);
   const itemCount = items.length;
 
+  const [pendingItemId, setPendingItemId] = useState(null);
+
   const handleUpdateQuantity = async (itemId, quantity) => {
     if (!cart?.id_cart) return;
-    
+    console.log('[CartPage] handleUpdateQuantity', { cartId: cart.id_cart, itemId, quantity });
+    setPendingItemId(itemId);
     try {
+      // optimistic UI: update store before waiting for response
+      // this will immediately reflect quantity change while awaiting server
       await updateCartItem.mutateAsync({
         cartId: cart.id_cart,
         itemId,
@@ -29,6 +34,10 @@ export const CartPage = () => {
       });
     } catch (error) {
       console.error('Error updating quantity:', error);
+      alert('❌ Error al actualizar la cantidad. Intenta de nuevo.');
+    }
+    finally {
+      setPendingItemId(null);
     }
   };
 
@@ -36,13 +45,20 @@ export const CartPage = () => {
     if (!cart?.id_cart) return;
     
     if (window.confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+      console.log('[CartPage] Deleting item:', itemId, 'from cart', cart.id_cart);
+      setPendingItemId(itemId);
       try {
+        // No optimistic update: remove is immediate on success
         await removeFromCart.mutateAsync({
           cartId: cart.id_cart,
           itemId,
         });
       } catch (error) {
         console.error('Error removing item:', error);
+        alert('❌ Error al eliminar el producto. Intenta de nuevo.');
+      }
+      finally {
+        setPendingItemId(null);
       }
     }
   };
@@ -85,6 +101,8 @@ export const CartPage = () => {
     );
   }
 
+  const isBusy = updateCartItem.isPending || removeFromCart.isPending;
+
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-800 mb-8">Mi Carrito ({itemCount} productos)</h1>
@@ -97,6 +115,8 @@ export const CartPage = () => {
               item={item}
               onUpdateQuantity={handleUpdateQuantity}
               onRemove={handleRemove}
+              isUpdating={updateCartItem.isPending && pendingItemId === item.id}
+              isRemoving={removeFromCart.isPending && pendingItemId === item.id}
             />
           ))}
         </div>
@@ -106,6 +126,7 @@ export const CartPage = () => {
             total={total}
             itemCount={itemCount}
             onCheckout={handleCheckout}
+            isLoading={isBusy}
           />
         </div>
       </div>
