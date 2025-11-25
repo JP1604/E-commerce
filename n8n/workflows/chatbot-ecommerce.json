@@ -1,0 +1,405 @@
+{
+  "name": "E-commerce Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "chatbot-webhook"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{$json.body.message.toLowerCase()}}",
+                    "operation": "contains",
+                    "value2": "productos"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{$json.body.message.toLowerCase()}}",
+                    "operation": "contains",
+                    "value2": "carrito"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{$json.body.message.toLowerCase()}}",
+                    "operation": "contains",
+                    "value2": "orden"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{$json.body.message.toLowerCase()}}",
+                    "operation": "contains",
+                    "value2": "pagar"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{$json.body.message.toLowerCase()}}",
+                    "operation": "contains",
+                    "value2": "ayuda"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "id": "switch-commands",
+      "name": "Identificar Comando",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://product_service:8000/api/v1/products/",
+        "options": {}
+      },
+      "id": "get-products",
+      "name": "Obtener Productos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [650, 100]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=🛍️ **Productos Disponibles:**\n\n{{$json.map((p, i) => `${i+1}. **${p.name}** - $${p.price}\n   📦 Stock: ${p.stock} unidades\n   ID: ${p.id}`).join('\\n\\n')}}\n\n💬 Para agregar al carrito escribe: \"agregar [product_id]\""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-products",
+      "name": "Formatear Productos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [850, 100]
+    },
+    {
+      "parameters": {
+        "url": "=http://cart_service:8003/api/v1/carts/user/{{$('Webhook').item.json.body.user_id}}",
+        "options": {}
+      },
+      "id": "get-cart",
+      "name": "Obtener Carrito",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [650, 250]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=🛒 **Tu Carrito:**\n\n{{$json.items && $json.items.length > 0 ? $json.items.map((item, i) => `${i+1}. ${item.product_name || 'Producto'} x${item.quantity}\n   💰 Precio: $${item.price}\n   📊 Subtotal: $${item.price * item.quantity}`).join('\\n\\n') + '\\n\\n💵 **Total: $' + $json.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) + '**' : '¡Tu carrito está vacío! 😊\\n\\nEscribe \"ver productos\" para empezar a comprar.'}} \n\n💬 Escribe \"crear orden\" para continuar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-cart",
+      "name": "Formatear Carrito",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [850, 250]
+    },
+    {
+      "parameters": {
+        "url": "=http://order_service:8005/api/v1/orders/user/{{$('Webhook').item.json.body.user_id}}",
+        "options": {}
+      },
+      "id": "get-orders",
+      "name": "Obtener Órdenes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [650, 400]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=📦 **Tus Órdenes:**\n\n{{$json.length > 0 ? $json.map((order, i) => `${i+1}. **Orden #${order.id.slice(0,8)}**\n   📅 Fecha: ${new Date(order.created_at).toLocaleDateString()}\n   💰 Total: $${order.total_amount}\n   📊 Estado: ${order.status}\n   🆔 ID: ${order.id}`).join('\\n\\n') : '¡No tienes órdenes aún! 😊\\n\\nEscribe \"ver productos\" para empezar a comprar.'}}\n\n💬 Para ver detalles escribe: \"estado orden [order_id]\""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-orders",
+      "name": "Formatear Órdenes",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [850, 400]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "💳 **Procesar Pago**\n\nPara procesar el pago de tu orden, por favor proporciona:\n\n1️⃣ ID de la orden\n2️⃣ Método de pago (credit_card, debit_card, paypal, bank_transfer, cash)\n\nEjemplo: \"pagar [order_id] con credit_card\"\n\n💬 ¿Necesitas ayuda? Escribe \"ayuda\""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-payment",
+      "name": "Instrucciones de Pago",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [650, 550]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "🤖 **Bienvenido al Asistente Virtual de E-commerce**\n\n¿En qué puedo ayudarte hoy? Estos son los comandos disponibles:\n\n🛍️ **Productos**\n• \"ver productos\" - Lista todos los productos\n• \"buscar [nombre]\" - Busca productos específicos\n\n🛒 **Carrito**\n• \"agregar [product_id]\" - Agrega producto al carrito\n• \"ver carrito\" - Muestra tu carrito actual\n• \"vaciar carrito\" - Limpia tu carrito\n\n📦 **Órdenes**\n• \"crear orden\" - Crea orden con tu carrito\n• \"mis órdenes\" - Lista todas tus órdenes\n• \"estado orden [order_id]\" - Consulta estado de una orden\n\n💳 **Pagos**\n• \"pagar orden [order_id]\" - Procesa el pago\n• \"métodos de pago\" - Muestra opciones de pago\n\n❓ **Ayuda**\n• \"ayuda\" - Muestra este menú\n• \"soporte\" - Contacta con soporte\n\n💬 ¿Qué te gustaría hacer?"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-help",
+      "name": "Menú de Ayuda",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [650, 700]
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "id": "respond-webhook",
+      "name": "Responder al Usuario",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=❌ **Lo siento, no entendí tu mensaje**\n\n\"{{$('Webhook').item.json.body.message}}\"\n\nPor favor, intenta con uno de estos comandos:\n• ver productos\n• ver carrito\n• mis órdenes\n• ayuda\n\n💬 ¿En qué puedo ayudarte?"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "default-response",
+      "name": "Respuesta Predeterminada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [650, 850]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Identificar Comando",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identificar Comando": {
+      "main": [
+        [
+          {
+            "node": "Obtener Productos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obtener Carrito",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obtener Órdenes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Instrucciones de Pago",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Menú de Ayuda",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respuesta Predeterminada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Productos": {
+      "main": [
+        [
+          {
+            "node": "Formatear Productos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Productos": {
+      "main": [
+        [
+          {
+            "node": "Responder al Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Carrito": {
+      "main": [
+        [
+          {
+            "node": "Formatear Carrito",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Carrito": {
+      "main": [
+        [
+          {
+            "node": "Responder al Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Órdenes": {
+      "main": [
+        [
+          {
+            "node": "Formatear Órdenes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Órdenes": {
+      "main": [
+        [
+          {
+            "node": "Responder al Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instrucciones de Pago": {
+      "main": [
+        [
+          {
+            "node": "Responder al Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Menú de Ayuda": {
+      "main": [
+        [
+          {
+            "node": "Responder al Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respuesta Predeterminada": {
+      "main": [
+        [
+          {
+            "node": "Responder al Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1",
+  "id": "ecommerce-chatbot",
+  "meta": {
+    "instanceId": "ecommerce"
+  },
+  "tags": []
+}

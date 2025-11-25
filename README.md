@@ -1,8 +1,6 @@
-# 🛒 E-commerce Microservices Platform# Simple E-commerce Backend
+# 🛍️ E-Commerce Platform con Chatbot n8n
 
-
-
-Una plataforma completa de e-commerce implementada con **arquitectura de microservicios** usando **arquitectura hexagonal** y **FastAPI**.Una implementación simple de backend para e-commerce usando arquitectura hexagonal.
+Plataforma completa de e-commerce con arquitectura de microservicios, frontend React y chatbot inteligente integrado con n8n.
 
 
 
