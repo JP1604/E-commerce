@@ -43,9 +43,9 @@ class SQLAlchemyCartRepository(CartRepository):
             select(CartModel).where(
                 CartModel.user_id == user_id,
                 CartModel.status == CartStatus.ACTIVE.value
-            )
+            ).order_by(CartModel.created_at.desc())
         )
-        cart_model = result.scalar_one_or_none()
+        cart_model = result.scalars().first()
         return self._to_entity(cart_model) if cart_model else None
 
     async def update(self, cart: Cart) -> Cart:
