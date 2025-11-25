@@ -4,7 +4,54 @@ Este proyecto implementa una arquitectura de microservicios para un sistema de E
 
 ## Servicios Implementados
 
-### 1. Order Service (Puerto 8005)
+### 1. Product Service (Puerto 8000)
+**Responsabilidad**: Gestión del catálogo de productos
+
+**Endpoints principales**:
+- `POST /api/v1/products/` - Crear nuevo producto
+- `GET /api/v1/products/` - Obtener todos los productos
+- `GET /api/v1/products/{product_id}` - Obtener producto por ID
+- `PUT /api/v1/products/{product_id}` - Actualizar producto
+- `DELETE /api/v1/products/{product_id}` - Eliminar producto
+
+**Base de datos**: PostgreSQL (puerto 5432)
+**Entidades**: Product
+
+### 2. User Service (Puerto 8001)
+**Responsabilidad**: Gestión de usuarios
+
+**Endpoints principales**:
+- `POST /api/v1/users/` - Crear nuevo usuario
+- `GET /api/v1/users/` - Obtener todos los usuarios
+- `GET /api/v1/users/{user_id}` - Obtener usuario por ID
+- `PUT /api/v1/users/{user_id}` - Actualizar usuario
+- `DELETE /api/v1/users/{user_id}` - Eliminar usuario
+
+**Base de datos**: PostgreSQL (puerto 5433)
+**Entidades**: User
+
+### 3. Delivery Service (Puerto 8002)
+**Responsabilidad**: Gestión de entregas
+
+**Base de datos**: PostgreSQL (puerto 5434)
+**Entidades**: Delivery
+
+### 4. Cart Service (Puerto 8003)
+**Responsabilidad**: Gestión del carrito de compras
+
+**Endpoints principales**:
+- `POST /api/v1/carts/` - Crear nuevo carrito
+- `GET /api/v1/carts/{cart_id}` - Obtener carrito por ID
+- `GET /api/v1/carts/user/{user_id}` - Obtener carrito de un usuario
+- `POST /api/v1/carts/{cart_id}/items` - Agregar item al carrito
+- `GET /api/v1/carts/{cart_id}/items` - Obtener items del carrito
+- `GET /api/v1/products/` - Obtener productos disponibles
+- `POST /api/v1/products/` - Crear nuevo producto
+
+**Base de datos**: PostgreSQL (puerto 5436)
+**Entidades**: Cart, CartItem, Product
+
+### 5. Order Service (Puerto 8005)
 **Responsabilidad**: Gestión de órdenes de compra
 
 **Endpoints principales**:
@@ -17,7 +64,7 @@ Este proyecto implementa una arquitectura de microservicios para un sistema de E
 **Base de datos**: PostgreSQL (puerto 5434)
 **Entidades**: Order, OrderItem
 
-### 2. Order Validation Service (Puerto 8006)
+### 6. Order Validation Service (Puerto 8006)
 **Responsabilidad**: Validación de órdenes antes del procesamiento
 
 **Endpoints principales**:
@@ -34,7 +81,7 @@ Este proyecto implementa una arquitectura de microservicios para un sistema de E
 
 **Base de datos**: En memoria (para simplicidad)
 
-### 3. Payment Processing Service (Puerto 8007)
+### 7. Payment Processing Service (Puerto 8007)
 **Responsabilidad**: Procesamiento de pagos y reembolsos
 
 **Endpoints principales**:
@@ -94,6 +141,10 @@ docker-compose logs -f order_service
 
 Una vez ejecutados los servicios:
 
+- **Product Service**: http://localhost:8000/docs
+- **User Service**: http://localhost:8001/docs
+- **Delivery Service**: http://localhost:8002/docs
+- **Cart Service**: http://localhost:8003/docs
 - **Order Service**: http://localhost:8005/docs
 - **Order Validation Service**: http://localhost:8006/docs  
 - **Payment Service**: http://localhost:8007/docs

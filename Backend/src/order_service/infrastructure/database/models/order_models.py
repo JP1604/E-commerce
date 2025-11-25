@@ -18,8 +18,10 @@ class OrderModel(Base):
     
     id_order = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid4)
     id_user = Column(PostgresUUID(as_uuid=True), nullable=False)
+    id_cart = Column(PostgresUUID(as_uuid=True), nullable=False)
     total = Column(Float, nullable=False, default=0.0)
     status = Column(Enum(OrderStatus), nullable=False, default=OrderStatus.CREATED)
+    payment_id = Column(PostgresUUID(as_uuid=True), nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=True)
     

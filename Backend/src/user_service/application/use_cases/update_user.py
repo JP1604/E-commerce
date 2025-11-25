@@ -3,6 +3,7 @@
 from uuid import UUID
 from user_service.application.dtos import UserUpdateDTO
 from user_service.domain.repositories import UserRepository
+from user_service.application.security import hash_password, verify_password
 
 
 class UpdateUserUseCase:
@@ -19,7 +20,11 @@ class UpdateUserUseCase:
         if data.email is not None:
             user.email = data.email
         if data.password is not None:
-            user.hash_password = self._hash_password(data.password)
+            if not data.current_password:
+                raise ValueError("Current password is required to change password")
+            if not verify_password(data.current_password, user.hash_password):
+                raise ValueError("Current password is incorrect")
+            user.hash_password = hash_password(data.password)
         if data.phone is not None:
             user.phone = data.phone
         if data.address is not None:
@@ -27,6 +32,5 @@ class UpdateUserUseCase:
 
         return await self._repository.update(user)
 
-    def _hash_password(self, password: str) -> str:
-        return f"sha256:{password}"
+    
 

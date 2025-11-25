@@ -40,8 +40,10 @@ class Order(BaseModel):
     """Order domain entity."""
     id_order: UUID = Field(default_factory=uuid4)
     id_user: UUID
+    id_cart: UUID
     total: float = Field(ge=0)
     status: OrderStatus = OrderStatus.CREATED
+    payment_id: Optional[UUID] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
     

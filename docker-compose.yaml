@@ -57,7 +57,66 @@ services:
       - USER_DATABASE_URL=postgresql+asyncpg://user_svc:user_pass@user_db:5432/userdb
       - USER_DATABASE_ECHO=false
     volumes:
-      - ./backend:/app
+      - ./Backend:/app
+
+  delivery_db:
+    image: postgres:16-alpine
+    container_name: delivery_service_db
+    restart: always
+    environment:
+      POSTGRES_USER: delivery_svc
+      POSTGRES_PASSWORD: delivery_pass
+      POSTGRES_DB: deliverydb
+    ports:
+      - "5434:5432"
+    volumes:
+      - delivery_service_data:/var/lib/postgresql/data
+
+  delivery_service:
+    build:
+      context: ./Backend
+      dockerfile: src/delivery_service/Dockerfile
+    container_name: delivery_service
+    restart: always
+    depends_on:
+      - delivery_db
+    ports:
+      - "8002:8002"
+    environment:
+      - DELIVERY_DATABASE_URL=postgresql+asyncpg://delivery_svc:delivery_pass@delivery_db:5432/deliverydb
+      - DELIVERY_DATABASE_ECHO=false
+    volumes:
+      - ./Backend:/app
+
+
+  cart_db:
+    image: postgres:15
+    container_name: cart_service_db
+    restart: always
+    environment:
+      POSTGRES_USER: cart_svc
+      POSTGRES_PASSWORD: cart_pass
+      POSTGRES_DB: cartdb
+    ports:
+      - "5436:5432"
+    volumes:
+      - cart_service_data:/var/lib/postgresql/data
+
+  cart_service:
+    build:
+      context: ./Backend
+      dockerfile: src/cart_service/Dockerfile
+    container_name: cart_service
+    restart: always
+    depends_on:
+      - cart_db
+    ports:
+      - "8003:8003"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://cart_svc:cart_pass@cart_db:5432/cartdb
+      - DATABASE_ECHO=false
+    volumes:
+      - ./Backend:/app
 
   order_db:
     image: postgres:15
@@ -68,7 +127,7 @@ services:
       POSTGRES_PASSWORD: order_pass
       POSTGRES_DB: orderdb
     ports:
-      - "5434:5432"
+      - "5437:5432"
     volumes:
       - order_service_data:/var/lib/postgresql/data
 
@@ -131,11 +190,20 @@ services:
       - PAYMENT_DATABASE_ECHO=false
       - ORDER_SERVICE_URL=http://order_service:8005
       - USER_SERVICE_URL=http://user_service:8001
+
     volumes:
       - ./Backend:/app
 
 volumes:
   ecommerce_data:
   user_service_data:
+
+  delivery_service_data:
+
+
+  cart_service_data:
+
   order_service_data:
   payment_service_data:
+
+

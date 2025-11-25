@@ -59,6 +59,15 @@ async def root():
     }
 
 
+@app.get("/health")
+async def health():
+    """Health check endpoint for Kubernetes."""
+    return {
+        "status": "healthy",
+        "service": "product-service"
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     
