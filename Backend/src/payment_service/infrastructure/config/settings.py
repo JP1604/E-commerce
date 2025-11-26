@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     service_version: str = "0.1.0"
     debug: bool = True
     project_name: str = "Simple E-commerce Backend"
-    backend_cors_origins: str = '["http://localhost:3000", "http://localhost:3001", "http://localhost:8080"]'
+    backend_cors_origins: str = '["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:5177", "http://localhost:8080"]'
     
     # Payment gateways
     stripe_secret_key: str = ""
