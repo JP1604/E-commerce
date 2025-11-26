@@ -1,0 +1,112 @@
+# Ollama AI Service
+# Runs Llama 3.1 8B model for natural language processing
+
+---
+# PersistentVolumeClaim for Ollama models
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi  # Llama 3.1 8B needs ~5GB
+
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: default
+  labels:
+    app: ollama
+spec:
+  replicas: 1  # Only 1 replica (LLM is resource intensive)
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        ports:
+        - containerPort: 11434
+          name: http
+        env:
+        - name: OLLAMA_HOST
+          value: "0.0.0.0:11434"
+        volumeMounts:
+        - name: ollama-models
+          mountPath: /root/.ollama
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        # Health check
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 11434
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 11434
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: ollama-models
+        persistentVolumeClaim:
+          claimName: ollama-models-pvc
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: default
+  labels:
+    app: ollama
+spec:
+  type: ClusterIP
+  ports:
+  - port: 11434
+    targetPort: 11434
+    protocol: TCP
+    name: http
+  selector:
+    app: ollama
+
+---
+# NodePort Service for external access (optional - for testing)
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-external
+  namespace: default
+  labels:
+    app: ollama
+spec:
+  type: NodePort
+  ports:
+  - port: 11434
+    targetPort: 11434
+    nodePort: 30434
+    protocol: TCP
+    name: http
+  selector:
+    app: ollama
+
