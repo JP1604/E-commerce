@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useProducts } from '../hooks/useProducts';
 import { ProductGrid } from '../components/products/ProductGrid';
 import { ProductFilters } from '../components/products/ProductFilters';
+import { Chatbot } from '../components/chatbot/Chatbot';
 import { useCartStore } from '../store/cartStore';
 import { useUserStore } from '../store/userStore';
 import { useCart } from '../hooks/useCart';
@@ -115,6 +116,9 @@ export const ProductsPage = () => {
         onAddToCart={handleAddToCart}
         onViewDetails={handleViewDetails}
       />
+
+      {/* Chatbot */}
+      <Chatbot />
     </div>
   );
 };
