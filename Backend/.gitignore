@@ -89,3 +89,7 @@ logs/
 
 # Temporary files
 *.tmp
+
+.specstory/
+.specstory/history/
+.specstory/.project.json

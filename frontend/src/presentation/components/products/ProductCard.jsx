@@ -87,10 +87,18 @@ export const ProductCard = ({ product, onViewDetails }) => {
   return (
     <Card className="hover:shadow-xl transition-all duration-300 h-full flex flex-col group">
       <div 
-        className="h-48 bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center cursor-pointer group-hover:scale-105 transition-transform duration-300"
+        className="h-48 bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center cursor-pointer overflow-hidden relative"
         onClick={() => navigate(`/products/${product.id}`)}
       >
-        <span className="text-6xl">📦</span>
+        {product.image_url ? (
+          <img 
+            src={product.image_url} 
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+          />
+        ) : (
+          <span className="text-6xl group-hover:scale-110 transition-transform duration-300">📦</span>
+        )}
       </div>
       <CardBody className="flex-1 flex flex-col">
         <div className="flex justify-between items-start mb-2">

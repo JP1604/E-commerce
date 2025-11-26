@@ -2,6 +2,7 @@
 
 from typing import List
 from uuid import UUID
+import base64
 
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,12 +22,25 @@ class ProductController:
     ) -> ProductResponseDTO:
         """Create a new product."""
         try:
+            # Decode image from base64 if provided
+            image_bin = None
+            if data.image:
+                try:
+                    # Remove data URL prefix if present (data:image/jpeg;base64,)
+                    image_data = data.image
+                    if ',' in image_data:
+                        image_data = image_data.split(',')[1]
+                    image_bin = base64.b64decode(image_data)
+                except Exception as img_error:
+                    raise ValueError(f"Invalid image format: {str(img_error)}")
+            
             product = Product(
                 name=data.name,
                 description=data.description,
                 price=data.price,
                 category=data.category,
-                stock_quantity=data.stock_quantity or 0
+                stock_quantity=data.stock_quantity or 0,
+                image_bin=image_bin
             )
             
             saved_product = await container.product_repository.save(product)
@@ -79,6 +93,15 @@ class ProductController:
                 product.category = data.category
             if data.stock_quantity is not None:
                 product.stock_quantity = data.stock_quantity
+            if data.image is not None:
+                # Decode image from base64
+                try:
+                    image_data = data.image
+                    if ',' in image_data:
+                        image_data = image_data.split(',')[1]
+                    product.image_bin = base64.b64decode(image_data)
+                except Exception as img_error:
+                    raise ValueError(f"Invalid image format: {str(img_error)}")
             
             updated_product = await container.product_repository.update(product)
             return ProductResponseDTO.from_entity(updated_product)

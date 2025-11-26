@@ -17,6 +17,7 @@ class Product(BaseEntity):
         price: float,
         category: str,
         stock_quantity: int = 0,
+        image_bin: Optional[bytes] = None,
         id: Optional[UUID] = None,
     ) -> None:
         super().__init__(id)
@@ -25,6 +26,7 @@ class Product(BaseEntity):
         self.price = price
         self.category = category
         self.stock_quantity = stock_quantity
+        self.image_bin = image_bin
         
         self._validate()
     
@@ -55,5 +57,6 @@ class Product(BaseEntity):
             "price": self.price,
             "category": self.category,
             "stock_quantity": self.stock_quantity,
+            "image_bin": self.image_bin,
         })
         return base_dict

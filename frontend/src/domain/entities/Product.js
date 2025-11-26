@@ -6,6 +6,7 @@
  * @property {number} price
  * @property {string} category
  * @property {number} stock_quantity
+ * @property {string} [image_url]
  * @property {string} [created_at]
  * @property {string} [updated_at]
  */
@@ -17,6 +18,7 @@ export const createProduct = (data) => ({
   price: data.price,
   category: data.category,
   stock_quantity: data.stock_quantity,
+  image_url: data.image_url,
   created_at: data.created_at,
   updated_at: data.updated_at,
 });

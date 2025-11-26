@@ -1,0 +1,8 @@
+# VSCode Cursor / Indexing
+.cursorindexingignore
+.cursor/
+
+# SpecStory basura automática
+.specstory/
+.specstory/history/
+.specstory/.project.json

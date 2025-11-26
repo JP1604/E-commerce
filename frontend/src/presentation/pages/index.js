@@ -4,3 +4,4 @@ export { CartPage } from './CartPage';
 export { OrdersPage } from './OrdersPage';
 export { LoginPage } from './LoginPage';
 export { RegisterPage } from './RegisterPage';
+export { AddProductPage } from './AddProductPage';
