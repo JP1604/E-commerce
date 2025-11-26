@@ -1,0 +1,349 @@
+{
+  "name": "E-commerce Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-chat",
+      "name": "Chat Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "ecommerce-chat"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.response }}"
+      },
+      "id": "respond-to-webhook",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract user message\nconst userMessage = $input.item.json.body.message || $input.item.json.query.message || \"\";\n\n// Create a very explicit prompt with examples\nconst systemPrompt = `Task: Classify the user's request.\n\nUser request: \"${userMessage}\"\n\nRules:\n- If user says \"cheap\", \"cheapest\", \"lowest price\", \"bargain\", \"deal\" → answer: LOWEST_PRICE\n- If user says \"list\", \"show all\", \"all products\", \"what products\" → answer: LIST_PRODUCTS\n- If user says \"search\", \"find\", \"looking for\" specific item → answer: SEARCH_PRODUCTS\n- If user asks \"help\", \"what can you do\" → answer: HELP\n- Otherwise → answer: CHAT\n\nExamples:\n\"Show me the cheapest products\" → LOWEST_PRICE\n\"List all products\" → LIST_PRODUCTS\n\"Show all products\" → LIST_PRODUCTS\n\"What products do you have?\" → LIST_PRODUCTS\n\"Find iPhone\" → SEARCH_PRODUCTS\n\nYour answer (just the category name):`;\n\nreturn {\n  json: {\n    prompt: systemPrompt,\n    userMessage: userMessage\n  }\n};"
+      },
+      "id": "parse-intent",
+      "name": "Parse Intent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://ollama:11434/api/generate",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "tinyllama"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ $json.prompt }}"
+            },
+            {
+              "name": "stream",
+              "value": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "call-ollama",
+      "name": "Call Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Clean up Ollama response to extract just the category\nconst ollamaResponse = ($input.item.json.response || \"\").toUpperCase().trim();\n\n// Try to find the intent in the response\nlet intent = \"CHAT\";\n\nif (ollamaResponse.includes(\"LOWEST\") || ollamaResponse.includes(\"LOWES\")) {\n  intent = \"LOWEST_PRICE\";\n} else if (ollamaResponse.includes(\"LIST_PRODUCT\") || ollamaResponse.includes(\"LIST PRODUCT\")) {\n  intent = \"LIST_PRODUCTS\";\n} else if (ollamaResponse.includes(\"SEARCH\")) {\n  intent = \"SEARCH_PRODUCTS\";\n} else if (ollamaResponse.includes(\"HELP\")) {\n  intent = \"HELP\";\n}\n\n// Make absolutely sure there's no whitespace\nintent = intent.trim();\n\nreturn {\n  json: {\n    response: intent,\n    originalResponse: ollamaResponse\n  }\n};"
+      },
+      "id": "clean-response",
+      "name": "Clean Ollama Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.response }}",
+                    "rightValue": "LIST_PRODUCTS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "list_products"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.response }}",
+                    "rightValue": "SEARCH_PRODUCTS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "search_products"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.response }}",
+                    "rightValue": "LOWEST_PRICE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "lowest_price"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "route-intent",
+      "name": "Route by Intent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://product-service:8000/api/v1/products/",
+        "method": "GET",
+        "options": {}
+      },
+      "id": "get-products",
+      "name": "Get Products",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format products for user\n// n8n splits array responses into multiple items, so we need to collect them all\nconst allItems = $input.all();\n\n// Each item in allItems represents one product from the API response\nconst products = allItems.map(item => item.json);\n\nconst count = products.length;\n\nif (count === 0) {\n  return { json: { response: \"No products found in our store. The product service might be empty or unavailable.\" } };\n}\n\n// Format top 5 products\nconst topProducts = products.slice(0, 5);\nconst productList = topProducts.map((p, i) => \n  `${i+1}. ${p.name} - $${p.price} (${p.stock_quantity} in stock)`\n).join('\\n');\n\nconst response = `I found ${count} products! Here are the top ${Math.min(5, count)}:\\n\\n${productList}\\n\\nWould you like to know more about any of these?`;\n\nreturn { json: { response } };"
+      },
+      "id": "format-products",
+      "name": "Format Products",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle general chat\nconst userMessage = $input.first().json.userMessage;\nconst response = `I'm your NovaMarket assistant! 🛍️\\n\\nYou can ask me to:\\n- \"Show me products\" or \"List products\"\\n- \"Find cheapest items\" or \"Lowest prices\"\\n- \"Search for iPhone\" or \"Find electronics\"\\n- \"Tell me about product details\"\\n\\nHow can I help you today?`;\n\nreturn { json: { response } };"
+      },
+      "id": "chat-response",
+      "name": "Chat Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {
+        "url": "http://product-service:8000/api/v1/products/",
+        "method": "GET",
+        "options": {}
+      },
+      "id": "get-products-lowest",
+      "name": "Get Products for Lowest Price",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all products and sort by price (lowest first)\nconst allItems = $input.all();\nconst products = allItems.map(item => item.json);\n\nif (products.length === 0) {\n  return { json: { response: \"No products found in our store.\" } };\n}\n\n// Sort by price ascending (lowest first)\nconst sortedProducts = products.sort((a, b) => a.price - b.price);\n\n// Get top 3 cheapest\nconst cheapestProducts = sortedProducts.slice(0, 3);\nconst productList = cheapestProducts.map((p, i) => \n  `${i+1}. ${p.name} - $${p.price} (${p.stock_quantity} in stock)`\n).join('\\n');\n\nconst response = `Here are the ${Math.min(3, products.length)} cheapest products:\\n\\n${productList}\\n\\nGreat deals! 💰`;\n\nreturn { json: { response } };"
+      },
+      "id": "format-lowest-price",
+      "name": "Format Lowest Price",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 100]
+    }
+  ],
+  "connections": {
+    "Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Intent": {
+      "main": [
+        [
+          {
+            "node": "Call Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Ollama": {
+      "main": [
+        [
+          {
+            "node": "Clean Ollama Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Ollama Response": {
+      "main": [
+        [
+          {
+            "node": "Route by Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Intent": {
+      "main": [
+        [
+          {
+            "node": "Get Products",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Chat Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Products for Lowest Price",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Chat Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Products": {
+      "main": [
+        [
+          {
+            "node": "Format Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Products": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Response": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Products for Lowest Price": {
+      "main": [
+        [
+          {
+            "node": "Format Lowest Price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Lowest Price": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-26T00:00:00.000Z",
+  "versionId": "1"
+}
+

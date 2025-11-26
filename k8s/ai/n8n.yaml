@@ -1,0 +1,123 @@
+# n8n Workflow Automation Service
+# Web-based workflow builder for AI chatbot
+
+---
+# PersistentVolumeClaim for n8n data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: n8n-data-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: n8n
+  namespace: default
+  labels:
+    app: n8n
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n8n
+  template:
+    metadata:
+      labels:
+        app: n8n
+    spec:
+      containers:
+      - name: n8n
+        image: n8nio/n8n:latest
+        ports:
+        - containerPort: 5678
+          name: http
+        env:
+        - name: N8N_HOST
+          value: "0.0.0.0"
+        - name: N8N_PORT
+          value: "5678"
+        - name: N8N_PROTOCOL
+          value: "http"
+        - name: WEBHOOK_URL
+          value: "http://localhost:30678"
+        - name: GENERIC_TIMEZONE
+          value: "America/New_York"
+        # Disable authentication for local development
+        - name: N8N_BASIC_AUTH_ACTIVE
+          value: "false"
+        volumeMounts:
+        - name: n8n-data
+          mountPath: /home/node/.n8n
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        # Health check
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 5678
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 5678
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      volumes:
+      - name: n8n-data
+        persistentVolumeClaim:
+          claimName: n8n-data-pvc
+
+---
+# Service (Internal)
+apiVersion: v1
+kind: Service
+metadata:
+  name: n8n
+  namespace: default
+  labels:
+    app: n8n
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5678
+    targetPort: 5678
+    protocol: TCP
+    name: http
+  selector:
+    app: n8n
+
+---
+# NodePort Service (External Access)
+apiVersion: v1
+kind: Service
+metadata:
+  name: n8n-external
+  namespace: default
+  labels:
+    app: n8n
+spec:
+  type: NodePort
+  ports:
+  - port: 5678
+    targetPort: 5678
+    nodePort: 30678
+    protocol: TCP
+    name: http
+  selector:
+    app: n8n
+
