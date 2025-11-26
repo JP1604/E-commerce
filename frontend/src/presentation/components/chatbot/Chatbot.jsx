@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../ui/Button';
 
-const N8N_WEBHOOK_URL = 'http://localhost:30678/webhook-test/chat';
+const N8N_WEBHOOK_URL = 'http://localhost:30678/webhook/chat';
 
 export const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,7 +9,7 @@ export const Chatbot = () => {
     {
       id: 1,
       type: 'bot',
-      text: '¡Hola! 👋 Soy Nova, tu asistente virtual. ¿En qué puedo ayudarte hoy?',
+      text: 'Hello! 👋 I\'m Nova, your AI assistant for NovaMarket.\n\nI can help you:\n• View all products 📦\n• Find the cheapest items 💰\n• Answer your questions 🤔\n\nWhat would you like to know?',
       timestamp: new Date(),
     }
   ]);
@@ -33,50 +33,11 @@ export const Chatbot = () => {
   }, [isOpen]);
 
   const quickReplies = [
-    { id: 1, text: '¿Qué productos tienen?', icon: '📦' },
-    { id: 2, text: '¿Cómo realizo un pedido?', icon: '🛒' },
-    { id: 3, text: '¿Cuál es el tiempo de entrega?', icon: '🚚' },
-    { id: 4, text: 'Métodos de pago', icon: '💳' },
+    { id: 1, text: 'Show me all products', icon: '📦' },
+    { id: 2, text: 'Cheapest items', icon: '💰' },
+    { id: 3, text: 'What can you do?', icon: '❓' },
+    { id: 4, text: 'Help', icon: '🤖' },
   ];
-
-  const getBotResponse = (userMessage) => {
-    const lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.includes('producto') || lowerMessage.includes('catálogo') || lowerMessage.includes('venden')) {
-      return '¡Tenemos una amplia variedad de productos! 🎉 Encuentra desde tecnología hasta accesorios. Puedes explorar nuestro catálogo completo en esta página o usar el buscador para encontrar algo específico. ¿Buscas algo en particular?';
-    }
-    
-    if (lowerMessage.includes('pedido') || lowerMessage.includes('comprar') || lowerMessage.includes('orden')) {
-      return '¡Realizar un pedido es muy fácil! 🛍️\n\n1. Explora nuestros productos\n2. Haz clic en "Agregar al carrito" en los que te gusten\n3. Ve al carrito (ícono en la esquina superior)\n4. Haz clic en "Realizar Pedido"\n5. Completa la información de entrega\n6. ¡Listo! Recibirás una confirmación\n\n¿Necesitas ayuda con algún paso?';
-    }
-    
-    if (lowerMessage.includes('entrega') || lowerMessage.includes('envío') || lowerMessage.includes('llega')) {
-      return '¡Nuestros envíos son súper rápidos! 🚀\n\nEl tiempo de entrega depende de tu ubicación:\n• Ciudad: 1-2 días hábiles\n• Nacional: 3-5 días hábiles\n\n¡Todos nuestros envíos incluyen seguimiento en tiempo real! 📍';
-    }
-    
-    if (lowerMessage.includes('pago') || lowerMessage.includes('pagar') || lowerMessage.includes('tarjeta')) {
-      return '¡Aceptamos varios métodos de pago! 💳\n\n• Tarjetas de crédito/débito\n• Transferencias bancarias\n• Pago contra entrega (efectivo)\n\nTodas las transacciones son 100% seguras 🔒';
-    }
-    
-    if (lowerMessage.includes('precio') || lowerMessage.includes('costo') || lowerMessage.includes('cuánto')) {
-      return 'Los precios varían según el producto. 💰\n\nPuedes ver el precio de cada artículo en su tarjeta en el catálogo. ¡Tenemos productos para todos los presupuestos!\n\n¿Te interesa algún producto en específico?';
-    }
-    
-    if (lowerMessage.includes('ayuda') || lowerMessage.includes('soporte') || lowerMessage.includes('contacto')) {
-      return '¡Estoy aquí para ayudarte! 🤗\n\nPuedes preguntarme sobre:\n• Productos y catálogo\n• Cómo realizar pedidos\n• Métodos de pago\n• Tiempos de entrega\n• Estado de tu pedido\n\n¿Qué necesitas saber?';
-    }
-    
-    if (lowerMessage.includes('gracias') || lowerMessage.includes('genial') || lowerMessage.includes('perfecto')) {
-      return '¡De nada! 😊 Estoy aquí para ayudarte cuando lo necesites. ¡Felices compras! ✨';
-    }
-    
-    if (lowerMessage.includes('hola') || lowerMessage.includes('hey') || lowerMessage.includes('buenas')) {
-      return '¡Hola! 👋 Bienvenido a NovaMarket. ¿En qué puedo ayudarte hoy? Puedes preguntarme sobre productos, pedidos, envíos o cualquier otra cosa. 😊';
-    }
-    
-    // Respuesta por defecto
-    return '🤔 Interesante pregunta. Aunque no tengo una respuesta específica, puedo ayudarte con:\n\n• Información sobre productos\n• Proceso de compra\n• Métodos de pago\n• Tiempos de entrega\n\n¿Sobre cuál de estos temas te gustaría saber más?';
-  };
 
   const sendMessageToN8N = async (message) => {
     try {
@@ -89,34 +50,44 @@ export const Chatbot = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Error al conectar con el servidor');
+        throw new Error('Failed to connect to server');
       }
 
-      const data = await response.json();
+      // Read response as text first (can only read once!)
+      const textResponse = await response.text();
       
-      // El formato de respuesta puede variar según tu flujo de n8n
-      // Ajusta esto según la estructura de respuesta de tu webhook
-      if (data.output || data.response || data.message) {
-        return data.output || data.response || data.message;
+      // Try to parse as JSON
+      let data;
+      try {
+        data = JSON.parse(textResponse);
+      } catch (parseError) {
+        // It's plain text, return it directly
+        return textResponse;
       }
       
-      // Si la respuesta es un array de productos, formatearla
-      if (Array.isArray(data)) {
-        let productList = '📦 **Lista de Productos:**\n\n';
-        data.forEach((product, index) => {
-          productList += `${index + 1}. **${product.name || product.title}**\n`;
-          if (product.price) productList += `   💰 Precio: $${product.price}\n`;
-          if (product.description) productList += `   📝 ${product.description}\n`;
-          productList += '\n';
-        });
-        return productList;
+      // n8n returns an array with an object containing "response"
+      // Format: [{ "response": "text here" }]
+      if (Array.isArray(data) && data.length > 0) {
+        const firstItem = data[0];
+        if (firstItem && firstItem.response) {
+          return firstItem.response;
+        }
+      }
+      
+      // If it's a direct object with response
+      if (data && data.response) {
+        return data.response;
+      }
+      
+      // Other possible formats
+      if (data && (data.output || data.message || data.text)) {
+        return data.output || data.message || data.text;
       }
 
-      // Si es un objeto, intentar extraer el texto
+      // Fallback
       return JSON.stringify(data, null, 2);
     } catch (error) {
-      console.error('Error al comunicarse con n8n:', error);
-      // Fallback a respuestas locales si n8n no está disponible
+      console.error('Error communicating with n8n:', error);
       return null;
     }
   };
@@ -136,19 +107,19 @@ export const Chatbot = () => {
     setInputValue('');
     setIsTyping(true);
 
-    // Intentar obtener respuesta de n8n primero
+    // Get response from n8n
     const n8nResponse = await sendMessageToN8N(messageToSend);
     
     setTimeout(() => {
       const botResponse = {
         id: messages.length + 2,
         type: 'bot',
-        text: n8nResponse || getBotResponse(messageToSend),
+        text: n8nResponse || '❌ Error: Could not connect to the server. Please try again.',
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
-    }, n8nResponse ? 300 : 800);
+    }, 300);
   };
 
   const handleQuickReply = async (reply) => {
@@ -164,19 +135,19 @@ export const Chatbot = () => {
     setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
 
-    // Intentar obtener respuesta de n8n primero
+    // Get response from n8n
     const n8nResponse = await sendMessageToN8N(messageText);
     
     setTimeout(() => {
       const botResponse = {
         id: messages.length + 2,
         type: 'bot',
-        text: n8nResponse || getBotResponse(messageText),
+        text: n8nResponse || '❌ Error: Could not connect to the server. Please try again.',
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
-    }, n8nResponse ? 300 : 800);
+    }, 300);
   };
 
   const handleKeyPress = (e) => {
@@ -193,7 +164,7 @@ export const Chatbot = () => {
         <button
           onClick={() => setIsOpen(true)}
           className="fixed bottom-6 right-6 z-50 group"
-          aria-label="Abrir chat"
+          aria-label="Open chat"
         >
           <div className="relative">
             {/* Glow effect */}
@@ -228,13 +199,13 @@ export const Chatbot = () => {
               </div>
               <div>
                 <h3 className="font-bold text-lg">Nova Assistant</h3>
-                <p className="text-xs text-white/80">Siempre disponible para ti</p>
+                <p className="text-xs text-white/80">Always available for you</p>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
               className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg p-2 transition-colors"
-              aria-label="Cerrar chat"
+              aria-label="Close chat"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -264,7 +235,7 @@ export const Chatbot = () => {
                   >
                     <p className="text-sm whitespace-pre-line">{message.text}</p>
                     <p className={`text-xs mt-1 ${message.type === 'user' ? 'text-white/70' : 'text-gray-400'}`}>
-                      {message.timestamp.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                      {message.timestamp.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>
@@ -293,7 +264,7 @@ export const Chatbot = () => {
           {/* Quick Replies */}
           {messages.length === 1 && (
             <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
-              <p className="text-xs text-gray-500 mb-2 font-medium">Preguntas frecuentes:</p>
+              <p className="text-xs text-gray-500 mb-2 font-medium">Quick actions:</p>
               <div className="flex flex-wrap gap-2">
                 {quickReplies.map((reply) => (
                   <button
@@ -318,7 +289,7 @@ export const Chatbot = () => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Escribe tu mensaje..."
+                placeholder="Type your message..."
                 className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
               />
               <button
@@ -331,7 +302,7 @@ export const Chatbot = () => {
                 </svg>
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-2 text-center">Presiona Enter para enviar</p>
+            <p className="text-xs text-gray-400 mt-2 text-center">Press Enter to send</p>
           </div>
         </div>
       )}
