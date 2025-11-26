@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../ui/Button';
 
+const N8N_WEBHOOK_URL = 'http://localhost:30678/webhook-test/chat';
+
 export const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -76,7 +78,50 @@ export const Chatbot = () => {
     return '🤔 Interesante pregunta. Aunque no tengo una respuesta específica, puedo ayudarte con:\n\n• Información sobre productos\n• Proceso de compra\n• Métodos de pago\n• Tiempos de entrega\n\n¿Sobre cuál de estos temas te gustaría saber más?';
   };
 
-  const handleSendMessage = () => {
+  const sendMessageToN8N = async (message) => {
+    try {
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al conectar con el servidor');
+      }
+
+      const data = await response.json();
+      
+      // El formato de respuesta puede variar según tu flujo de n8n
+      // Ajusta esto según la estructura de respuesta de tu webhook
+      if (data.output || data.response || data.message) {
+        return data.output || data.response || data.message;
+      }
+      
+      // Si la respuesta es un array de productos, formatearla
+      if (Array.isArray(data)) {
+        let productList = '📦 **Lista de Productos:**\n\n';
+        data.forEach((product, index) => {
+          productList += `${index + 1}. **${product.name || product.title}**\n`;
+          if (product.price) productList += `   💰 Precio: $${product.price}\n`;
+          if (product.description) productList += `   📝 ${product.description}\n`;
+          productList += '\n';
+        });
+        return productList;
+      }
+
+      // Si es un objeto, intentar extraer el texto
+      return JSON.stringify(data, null, 2);
+    } catch (error) {
+      console.error('Error al comunicarse con n8n:', error);
+      // Fallback a respuestas locales si n8n no está disponible
+      return null;
+    }
+  };
+
+  const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
     const userMessage = {
@@ -87,25 +132,51 @@ export const Chatbot = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const messageToSend = inputValue;
     setInputValue('');
     setIsTyping(true);
 
-    // Simular delay de respuesta del bot
+    // Intentar obtener respuesta de n8n primero
+    const n8nResponse = await sendMessageToN8N(messageToSend);
+    
     setTimeout(() => {
       const botResponse = {
         id: messages.length + 2,
         type: 'bot',
-        text: getBotResponse(inputValue),
+        text: n8nResponse || getBotResponse(messageToSend),
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
-    }, 800);
+    }, n8nResponse ? 300 : 800);
   };
 
-  const handleQuickReply = (reply) => {
-    setInputValue(reply.text);
-    handleSendMessage();
+  const handleQuickReply = async (reply) => {
+    const messageText = reply.text;
+    
+    const userMessage = {
+      id: messages.length + 1,
+      type: 'user',
+      text: messageText,
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsTyping(true);
+
+    // Intentar obtener respuesta de n8n primero
+    const n8nResponse = await sendMessageToN8N(messageText);
+    
+    setTimeout(() => {
+      const botResponse = {
+        id: messages.length + 2,
+        type: 'bot',
+        text: n8nResponse || getBotResponse(messageText),
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, botResponse]);
+      setIsTyping(false);
+    }, n8nResponse ? 300 : 800);
   };
 
   const handleKeyPress = (e) => {
