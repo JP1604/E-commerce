@@ -6,6 +6,8 @@ import { HomePage } from './presentation/pages/HomePage';
 import { ProductsPage } from './presentation/pages/ProductsPage';
 import { ProductDetailPage } from './presentation/pages/ProductDetailPage';
 import { CartPage } from './presentation/pages/CartPage';
+import { CheckoutPage } from './presentation/pages/CheckoutPage';
+import { DeliveryPage } from './presentation/pages/DeliveryPage';
 import { LoginPage } from './presentation/pages/LoginPage';
 import { RegisterPage } from './presentation/pages/RegisterPage';
 import { useUserStore } from './presentation/store/userStore';
@@ -72,6 +74,22 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <CartPage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/checkout" element={
+            <ProtectedRoute>
+              <Layout>
+                <CheckoutPage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/delivery/:orderId" element={
+            <ProtectedRoute>
+              <Layout>
+                <DeliveryPage />
               </Layout>
             </ProtectedRoute>
           } />

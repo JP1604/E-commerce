@@ -2,3 +2,4 @@ export { productRepository, ProductRepositoryImpl } from './ProductRepositoryImp
 export { userRepository, UserRepositoryImpl } from './UserRepositoryImpl';
 export { cartRepository, CartRepositoryImpl } from './CartRepositoryImpl';
 export { orderRepository, OrderRepositoryImpl } from './OrderRepositoryImpl';
+export { deliveryRepository, DeliveryRepositoryImpl } from './DeliveryRepositoryImpl';
