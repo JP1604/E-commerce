@@ -11,6 +11,7 @@ class CartStatus(str, Enum):
     """Cart status enumeration."""
     ACTIVE = "activo"
     EMPTY = "vacio"
+    COMPLETED = "completado"
 
 
 class Cart(BaseEntity):
