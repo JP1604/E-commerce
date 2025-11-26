@@ -39,6 +39,10 @@ class ProductResponseDTO(BaseModel):
     created_at: datetime
     updated_at: datetime
     
+    class Config:
+        """Pydantic config."""
+        from_attributes = True
+    
     @classmethod
     def from_entity(cls, product):
         """Create DTO from domain entity."""
