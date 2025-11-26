@@ -14,6 +14,7 @@ import { RegisterPage } from './presentation/pages/RegisterPage';
 import { AddProductPage } from './presentation/pages/AddProductPage';
 import { useUserStore } from './presentation/store/userStore';
 import { useCart } from './presentation/hooks/useCart';
+import { Chatbot } from './presentation/components/chatbot';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +48,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <CartInitializer />
+        <Chatbot />
         <Routes>
           {/* Public Routes without Layout */}
           <Route path="/login" element={<LoginPage />} />
