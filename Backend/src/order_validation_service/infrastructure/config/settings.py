@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["*"]
     cors_methods: list[str] = ["*"]
     cors_headers: list[str] = ["*"]
-    backend_cors_origins: list[str] = ["http://localhost:3000", "http://localhost:8080"]
+    backend_cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:5177", "http://localhost:8080"]
 
     class Config:
         """Pydantic config."""

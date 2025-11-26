@@ -93,6 +93,50 @@ async def create_order(
         session.add(order_model)
         await session.commit()
         
+        # Mark cart as completed (call cart-service)
+        try:
+            from order_service.infrastructure.clients.cart_client import CartServiceClient
+            cart_client = CartServiceClient()
+            await cart_client.update_cart_status(order_data.id_cart, "vacio")
+            print(f"✅ Cart {order_data.id_cart} marked as completed")
+        except Exception as cart_error:
+            print(f"⚠️ Could not update cart status: {cart_error}")
+            # Don't fail the order creation if cart update fails
+        
+        # Create delivery automatically (call delivery-service)
+        try:
+            from order_service.infrastructure.clients.delivery_client import DeliveryServiceClient
+            from datetime import date, time, timedelta, datetime as dt
+            
+            delivery_client = DeliveryServiceClient()
+            
+            # Use user-selected delivery date or default to tomorrow
+            if order_data.delivery_date:
+                delivery_date = dt.strptime(order_data.delivery_date, "%Y-%m-%d").date()
+            else:
+                delivery_date = date.today() + timedelta(days=1)
+            
+            # Parse time strings (HH:MM format)
+            start_parts = order_data.delivery_time_start.split(":")
+            end_parts = order_data.delivery_time_end.split(":")
+            booking_start = time(int(start_parts[0]), int(start_parts[1]))
+            booking_end = time(int(end_parts[0]), int(end_parts[1]))
+            
+            delivery = await delivery_client.create_delivery(
+                order_id=order_id,
+                delivery_booked_schedule=delivery_date,
+                booking_start=booking_start,
+                booking_end=booking_end
+            )
+            
+            if delivery:
+                print(f"✅ Delivery created for order {order_id}: {delivery.get('id')}")
+            else:
+                print(f"⚠️ Could not create delivery for order {order_id}")
+        except Exception as delivery_error:
+            print(f"⚠️ Error creating delivery: {delivery_error}")
+            # Don't fail the order creation if delivery creation fails
+        
         # Return response
         return OrderResponseDTO(
             id_order=order_id,

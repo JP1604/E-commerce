@@ -52,3 +52,17 @@ class CartServiceClient:
             except Exception as e:
                 print(f"Error clearing cart {cart_id}: {e}")
                 return False
+
+    async def update_cart_status(self, cart_id: UUID, status: str) -> bool:
+        """Update cart status (e.g., to 'completado' after order creation)."""
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            try:
+                response = await client.put(
+                    f"{self.base_url}/api/v1/carts/{cart_id}",
+                    json={"status": status}
+                )
+                response.raise_for_status()
+                return True
+            except Exception as e:
+                print(f"Error updating cart status {cart_id}: {e}")
+                return False

@@ -33,6 +33,9 @@ class OrderCreateDTO(BaseModel):
     id_cart: UUID
     items: Optional[List[OrderItemCreateDTO]] = None  # Optional: if provided, uses these instead of fetching cart
     payment_method: str = Field(default="credit_card")
+    delivery_date: Optional[str] = None  # Date in YYYY-MM-DD format
+    delivery_time_start: Optional[str] = Field(default="09:00")  # Time in HH:MM format
+    delivery_time_end: Optional[str] = Field(default="17:00")  # Time in HH:MM format
 
 
 class OrderUpdateDTO(BaseModel):
