@@ -39,7 +39,7 @@ export const createOrder = (data) => ({
   total: data.total,
   status: data.status,
   payment_id: data.payment_id,
-  items: data.items || [],
+  items: (data.items || []).map(item => createOrderItem(item)),
   created_at: data.created_at,
   updated_at: data.updated_at,
 });

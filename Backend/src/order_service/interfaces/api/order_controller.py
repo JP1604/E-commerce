@@ -9,7 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from order_service.application.dtos.order_dto import (
     OrderCreateDTO,
     OrderResponseDTO,
-    OrderUpdateDTO
+    OrderUpdateDTO,
+    OrderItemResponseDTO
 )
 from order_service.application.use_cases.create_order import CreateOrderUseCase
 from order_service.application.use_cases.get_order import GetOrderUseCase
@@ -116,9 +117,11 @@ async def create_order(
             else:
                 delivery_date = date.today() + timedelta(days=1)
             
-            # Parse time strings (HH:MM format)
-            start_parts = order_data.delivery_time_start.split(":")
-            end_parts = order_data.delivery_time_end.split(":")
+            # Parse time strings (HH:MM format) with defaults
+            time_start = order_data.delivery_time_start or "09:00"
+            time_end = order_data.delivery_time_end or "17:00"
+            start_parts = time_start.split(":")
+            end_parts = time_end.split(":")
             booking_start = time(int(start_parts[0]), int(start_parts[1]))
             booking_end = time(int(end_parts[0]), int(end_parts[1]))
             
@@ -319,27 +322,3 @@ async def pay_order(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Error processing payment: {str(e)}"
         )
-    # Convert to response DTOs
-    return [
-        OrderResponseDTO(
-            id_order=order.id_order,
-            id_user=order.id_user,
-            total=order.total,
-            status=order.status,
-            created_at=order.created_at,
-            updated_at=order.updated_at,
-            items=[
-                {
-                    "id_order_item": item.id_order_item,
-                    "id_order": item.id_order,
-                    "id_product": item.id_product,
-                    "quantity": item.quantity,
-                    "unit_price": item.unit_price,
-                    "subtotal": item.subtotal,
-                    "created_at": item.created_at
-                }
-                for item in order.items
-            ]
-        )
-        for order in orders
-    ]

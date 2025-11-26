@@ -18,6 +18,10 @@ class DeliveryRepository(ABC):
         pass
 
     @abstractmethod
+    async def find_by_order_id(self, order_id: UUID) -> Optional[Delivery]:
+        pass
+
+    @abstractmethod
     async def find_all(self) -> List[Delivery]:
         pass
 

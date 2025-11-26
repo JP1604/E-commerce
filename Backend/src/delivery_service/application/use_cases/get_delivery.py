@@ -11,4 +11,7 @@ class GetDeliveryUseCase:
     async def by_id(self, delivery_id: UUID):
         return await self._repository.find_by_id(delivery_id)
 
+    async def by_order_id(self, order_id: UUID):
+        return await self._repository.find_by_order_id(order_id)
+
 

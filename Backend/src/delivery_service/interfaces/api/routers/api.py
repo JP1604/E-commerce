@@ -62,6 +62,29 @@ async def list_deliveries(
 
 
 @api_router.get(
+    "/order/{order_id}",
+    summary="Get delivery by order id",
+    description="Fetch a delivery by its order identifier.",
+    response_model=DeliveryResponseDTO,
+)
+async def get_delivery_by_order(
+    order_id: UUID,
+    container: SimpleContainer = Depends(get_container),
+):
+    """Get delivery by order ID."""
+    from delivery_service.application.use_cases.get_delivery import GetDeliveryUseCase
+    use_case = GetDeliveryUseCase(container.delivery_repository)
+    delivery = await use_case.by_order_id(order_id)
+    if not delivery:
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery not found for this order"
+        )
+    return DeliveryResponseDTO.from_entity(delivery)
+
+
+@api_router.get(
     "/{delivery_id}",
     summary="Get delivery by id",
     description="Fetch a single delivery by its identifier.",

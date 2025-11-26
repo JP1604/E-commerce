@@ -33,6 +33,11 @@ class SQLAlchemyDeliveryRepository(DeliveryRepository):
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
+    async def find_by_order_id(self, order_id: UUID) -> Optional[Delivery]:
+        result = await self._session.execute(select(DeliveryModel).where(DeliveryModel.order_id == order_id))
+        model = result.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+
     async def find_all(self) -> List[Delivery]:
         result = await self._session.execute(select(DeliveryModel))
         models = result.scalars().all()
