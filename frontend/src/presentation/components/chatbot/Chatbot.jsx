@@ -307,7 +307,7 @@ export const Chatbot = () => {
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         @keyframes slideUp {
           from {
             transform: translateY(100px);
