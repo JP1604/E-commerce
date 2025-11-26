@@ -83,6 +83,87 @@ export const HomePage = () => {
         </div>
       </section>
 
+      {/* Sell Your Products Section */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-accent-500/10 via-primary-500/10 to-secondary-500/10 rounded-3xl"></div>
+        <div className="relative bg-white/60 backdrop-blur-sm rounded-3xl p-8 md:p-12 shadow-soft border-2 border-accent-100">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div className="order-2 lg:order-1">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-6 card-hover">
+                    <div className="text-4xl mb-2">📦</div>
+                    <div className="font-semibold text-gray-900">Sin comisiones</div>
+                    <div className="text-sm text-gray-600">Vende sin costos extras</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-secondary-50 to-secondary-100 rounded-2xl p-6 card-hover">
+                    <div className="text-4xl mb-2">⚡</div>
+                    <div className="font-semibold text-gray-900">Publicación rápida</div>
+                    <div className="text-sm text-gray-600">En segundos</div>
+                  </div>
+                </div>
+                <div className="space-y-4 mt-8">
+                  <div className="bg-gradient-to-br from-accent-50 to-accent-100 rounded-2xl p-6 card-hover">
+                    <div className="text-4xl mb-2">👥</div>
+                    <div className="font-semibold text-gray-900">Miles de compradores</div>
+                    <div className="text-sm text-gray-600">Gran audiencia</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-primary-50 to-secondary-100 rounded-2xl p-6 card-hover">
+                    <div className="text-4xl mb-2">💰</div>
+                    <div className="font-semibold text-gray-900">Pagos seguros</div>
+                    <div className="text-sm text-gray-600">100% protegidos</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="order-1 lg:order-2 space-y-6">
+              <div className="inline-block">
+                <span className="px-4 py-2 bg-gradient-to-r from-accent-100 to-secondary-100 text-accent-700 rounded-full text-sm font-semibold">
+                  💼 Conviértete en vendedor
+                </span>
+              </div>
+              <h2 className="text-3xl md:text-5xl font-bold text-gray-900 leading-tight">
+                Vende tus productos
+                <span className="block text-gradient">y gana dinero</span>
+              </h2>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                Únete a nuestra comunidad de vendedores y alcanza miles de clientes. 
+                Es gratis, rápido y sin complicaciones.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link to="/sell-products">
+                  <Button size="lg" className="btn-gradient shadow-lg hover:shadow-xl w-full sm:w-auto">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Publicar Producto
+                  </Button>
+                </Link>
+                <Link to="/products">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-primary-600 text-primary-600 hover:bg-primary-50">
+                    Ver Productos
+                  </Button>
+                </Link>
+              </div>
+              <div className="flex items-center space-x-6 pt-4 text-sm">
+                <div className="flex items-center text-gray-600">
+                  <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Registro gratis
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Sin comisiones
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features */}
       <section>
         <div className="text-center mb-12">

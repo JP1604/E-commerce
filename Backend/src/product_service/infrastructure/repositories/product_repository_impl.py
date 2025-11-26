@@ -25,6 +25,7 @@ class SQLAlchemyProductRepository(ProductRepository):
             price=product.price,
             category=product.category,
             stock_quantity=product.stock_quantity,
+            image_bin=product.image_bin,
         )
         
         self._session.add(model)
@@ -63,6 +64,7 @@ class SQLAlchemyProductRepository(ProductRepository):
         model.price = product.price
         model.category = product.category
         model.stock_quantity = product.stock_quantity
+        model.image_bin = product.image_bin
         
         await self._session.flush()
         
@@ -90,5 +92,6 @@ class SQLAlchemyProductRepository(ProductRepository):
             price=model.price,
             category=model.category,
             stock_quantity=model.stock_quantity,
+            image_bin=model.image_bin,
             id=model.id,
         )

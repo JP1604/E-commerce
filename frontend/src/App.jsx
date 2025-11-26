@@ -10,6 +10,7 @@ import { CheckoutPage } from './presentation/pages/CheckoutPage';
 import { DeliveryPage } from './presentation/pages/DeliveryPage';
 import { LoginPage } from './presentation/pages/LoginPage';
 import { RegisterPage } from './presentation/pages/RegisterPage';
+import { AddProductPage } from './presentation/pages/AddProductPage';
 import { useUserStore } from './presentation/store/userStore';
 import { useCart } from './presentation/hooks/useCart';
 
@@ -67,6 +68,14 @@ function App() {
             <Layout>
               <ProductDetailPage />
             </Layout>
+          } />
+          
+          <Route path="/sell-products" element={
+            <ProtectedRoute>
+              <Layout>
+                <AddProductPage />
+              </Layout>
+            </ProtectedRoute>
           } />
           
           {/* Protected Routes */}
